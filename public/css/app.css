@@ -1,0 +1,163 @@
+/* Viaje Mais — login (entrar.html) e painel (painel.html). Usa as variáveis de base.css. */
+body{margin:0;font-family:var(--fonte-texto);color:var(--ink);background:var(--branco)}
+h1,h2,h3,.logo{font-family:var(--fonte-titulo);margin:0}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--medio);outline-offset:2px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:28px}
+.btn{border:0;border-radius:10px;padding:14px 22px;font-weight:700;font-size:16px;background:var(--escuro);color:var(--branco)}
+.btn.sec{background:var(--branco);color:var(--ink);border:2px solid var(--suave)}
+.btn.peq{padding:8px 14px;font-size:14px}.btn.perigo{background:var(--erro)}
+label{display:block;font-weight:700;font-size:15px;margin-bottom:8px}
+input,textarea,select{width:100%;font:inherit;padding:14px 16px;border:2px solid var(--suave);border-radius:10px;background:var(--branco);color:var(--ink)}
+input:focus,textarea:focus,select:focus{border-color:var(--medio);outline:0}
+.msg{min-height:22px;font-size:15px;font-weight:700}.msg.erro{color:var(--erro)}.msg.ok{color:var(--medio)}
+/* login */
+.auth{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+.lado{background:linear-gradient(150deg,var(--escuro) 55%,var(--medio));color:var(--branco);padding:56px 72px;display:flex;flex-direction:column;justify-content:space-between}
+.lado h1{font-size:clamp(34px,4vw,52px);line-height:1.1;max-width:520px}
+.lado p{font-size:19px;line-height:1.55;max-width:500px;margin:20px 0 0}
+.lado .regiao{color:var(--lima);font-weight:700;margin-bottom:18px}
+.form{display:flex;align-items:center;justify-content:center;padding:32px}
+.card{width:100%;max-width:440px;display:grid;gap:16px}
+.abas{display:flex;gap:6px;padding:6px;background:var(--claro);border-radius:12px}
+.abas button{flex:1;border:0;padding:12px;border-radius:9px;background:none;font-weight:700;color:var(--muted)}
+.abas button[aria-selected=true]{background:var(--escuro);color:var(--branco)}
+.card h2{font-size:34px}.card .sub{color:var(--muted);margin:-6px 0 0;line-height:1.5}
+.google{display:flex;align-items:center;justify-content:center;gap:12px}
+.div{display:flex;align-items:center;gap:14px;color:var(--muted);font-weight:600;font-size:14px}
+.div::before,.div::after{content:"";flex:1;height:1px;background:var(--suave)}
+.perfis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.perfis label{margin:0;border:2px solid var(--suave);border-radius:10px;padding:12px;font-weight:600;cursor:pointer;display:flex;gap:8px;align-items:center}
+.perfis input{width:auto}.perfis label:has(input:checked){border-color:var(--medio);background:var(--claro)}
+.hidden{display:none!important}
+@media(max-width:860px){.auth{grid-template-columns:1fr}.lado{padding:32px 24px;gap:20px;border-radius:0 0 28px 28px}.lado p,.lado .regiao{display:none}}
+@media(prefers-reduced-motion:no-preference){.btn{transition:transform .12s}.btn:active{transform:scale(.98)}}
+
+/* ---------- painel (v5): mesma identidade da home ---------- */
+.app{line-height:1.5}
+.app .w{max-width:1240px;margin:0 auto;padding:0 48px}
+.app a{color:inherit}
+
+/* topo branco, igual ao da home */
+.app .topo{background:var(--branco);border-bottom:1px solid var(--suave)}
+.app .topo .w{height:76px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.app .brand{font-family:var(--fonte-titulo);font-weight:700;font-size:26px;color:var(--escuro);display:flex;align-items:center;gap:10px;text-decoration:none}
+.app .quem{display:flex;gap:14px;align-items:center;font-weight:700}
+.app .papel{background:var(--claro);color:var(--escuro);padding:4px 12px;border-radius:99px;font-size:14px}
+
+/* faixa verde: título da tela e abas que "encaixam" no conteúdo branco */
+.faixa{background:var(--escuro);background-image:linear-gradient(120deg,var(--escuro) 0%,var(--escuro) 50%,var(--medio) 150%);color:var(--branco)}
+.faixa .w{padding-top:40px}
+.faixa.sem-abas .w{padding-bottom:40px}
+.faixa h1{font-size:40px;line-height:1.1}
+.faixa p{margin:10px 0 0;color:var(--suave);font-size:18px;max-width:640px}
+.nav{display:flex;gap:4px;margin-top:28px;overflow-x:auto}
+.nav a{padding:12px 22px;border-radius:12px 12px 0 0;color:var(--suave);font-weight:700;text-decoration:none;white-space:nowrap}
+.nav a:hover{color:var(--branco);background:rgba(255,255,255,.08)}
+.nav a[aria-current=page]{background:var(--branco);color:var(--escuro)}
+.nav a:focus-visible{outline-color:var(--lima);outline-offset:-3px}
+
+.app main.w{padding-top:36px;padding-bottom:72px}
+.app h2{font-size:26px;margin-bottom:16px}
+.meta{color:var(--muted);margin:0}
+.tag{display:inline-block;padding:3px 12px;border-radius:99px;font-size:13px;font-weight:700;background:var(--claro);color:var(--escuro)}
+.tag.pendente{background:var(--pendente)}.tag.reservada,.tag.aprovado,.tag.ativo{background:var(--suave)}
+.tag.usada,.tag.cancelada{background:var(--cinza);color:var(--muted)}
+.aviso{background:var(--aviso);border-radius:10px;padding:12px 14px;font-weight:600;margin:0}
+.voltar{display:inline-flex;align-items:center;gap:6px;margin-bottom:22px;font-weight:700;color:var(--medio);text-decoration:none}
+.voltar:hover{text-decoration:underline}
+.vazio{padding:28px;border:2px dashed var(--suave);border-radius:16px;color:var(--muted)}
+.vazio strong{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}.vazio p{margin:0}.vazio a{color:var(--medio);font-weight:700}
+
+/* filtros */
+.filtros{display:flex;gap:12px;margin:0 0 28px;flex-wrap:wrap}.filtros select{width:auto;min-width:200px}
+
+/* cartão de oferta: o selo verde mostra o desconto, a barra mostra quanto do horário está vazio */
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:24px}
+.oferta{display:flex;flex-direction:column;border:1px solid var(--suave);border-radius:16px;overflow:hidden;text-decoration:none;background:var(--branco)}
+.oferta:hover{border-color:var(--medio)}
+.selo{background:var(--escuro);color:var(--branco);padding:18px 20px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;min-height:96px}
+.selo b{font:700 46px/1 var(--fonte-titulo);color:var(--lima);display:block}
+.selo span{font-weight:700;color:var(--suave)}
+.selo em{font-style:normal;font-weight:800;font-size:14px;background:var(--lima);color:var(--escuro);padding:5px 12px 5px 9px;border-radius:99px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.selo.ultima{background:linear-gradient(120deg,var(--escuro) 40%,var(--medio))}
+.oferta .corpo{padding:18px 20px 20px;display:grid;gap:10px;flex:1;align-content:start}
+.oferta h3{font-size:21px;line-height:1.2}
+.oferta .tag{justify-self:start}
+.preco{margin:0;display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px}
+.preco s{color:var(--muted);font-weight:600}
+.preco strong{font:700 24px/1.1 var(--fonte-titulo);color:var(--medio)}
+.preco small{color:var(--muted);font-weight:600}
+.ocupacao{display:grid;gap:6px;font-size:14px;font-weight:700;color:var(--muted)}
+.barra{height:8px;border-radius:99px;background:var(--claro);overflow:hidden}
+.barra i{display:block;height:100%;background:var(--lima);border-radius:99px}
+
+/* detalhe da oferta */
+.det{display:grid;grid-template-columns:1fr 380px;gap:40px;align-items:start}
+.resumo{border:1px solid var(--suave);border-radius:16px;overflow:hidden;margin-bottom:32px}
+.resumo .corpo{padding:20px;display:grid;gap:12px}
+.resumo .preco strong{font-size:32px}
+.nota{margin:0;color:var(--muted);font-size:15px}
+.sobre p{margin:0 0 12px;max-width:640px}
+
+/* caixas de formulário */
+.caixa{display:grid;gap:16px;border:1px solid var(--suave);border-radius:16px;padding:24px;background:var(--branco)}
+.caixa h2{margin:0;font-size:22px}
+.caixa .total{font:700 22px var(--fonte-titulo);color:var(--escuro)}
+.det .caixa{position:sticky;top:20px;box-shadow:0 8px 24px rgba(14,59,43,.08)}
+.duas{display:grid;grid-template-columns:360px 1fr;gap:40px;align-items:start}
+
+/* listas (reservas, ofertas do operador, passeios, admin) */
+.lista{list-style:none;margin:0;padding:0;border:1px solid var(--suave);border-radius:16px;overflow:hidden}
+.lista>li,.lista>a{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px 20px;padding:16px 20px;border-top:1px solid var(--suave);text-decoration:none}
+.lista>:first-child{border-top:0}
+.lista>a:hover{background:var(--claro)}
+.lista .principal strong{display:block;font-size:17px}
+.lista .principal .ocupacao{margin-top:10px;max-width:300px}
+.fim{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px 16px}
+.lista .valor{font:700 20px var(--fonte-titulo);color:var(--escuro);text-align:right}
+.lista .valor small{display:block;font:600 14px var(--fonte-texto);color:var(--muted)}
+.lista .agora{font-weight:700;color:var(--muted);white-space:nowrap}.lista .agora b{font:700 22px var(--fonte-titulo);color:var(--medio)}
+.lista .pendente{background:color-mix(in srgb,var(--pendente) 30%,var(--branco))}
+.acoes{display:flex;gap:8px}
+.secao{margin-bottom:44px}
+
+/* voucher em forma de ingresso */
+.ingresso{max-width:480px;border-radius:20px;overflow:hidden;border:1px solid var(--suave);box-shadow:0 10px 30px rgba(14,59,43,.12)}
+.ingresso header{background:var(--escuro);color:var(--branco);padding:24px 26px 28px}
+.ingresso header h2{font-size:28px;margin:12px 0 6px}
+.ingresso header p{margin:0;color:var(--suave)}
+.corte{height:24px;background:radial-gradient(circle at 0 50%,var(--branco) 11px,transparent 12px),radial-gradient(circle at 100% 50%,var(--branco) 11px,transparent 12px),linear-gradient(var(--escuro) 50%,var(--branco) 50%);position:relative}
+.corte::after{content:"";position:absolute;left:22px;right:22px;top:50%;border-top:2px dashed var(--suave)}
+.ing-corpo{padding:12px 26px 26px;display:grid;gap:14px}
+.rotulo{margin:0;font-weight:700;color:var(--muted)}
+.codigo{font:800 40px/1.1 ui-monospace,Consolas,monospace;letter-spacing:.14em;text-align:center;background:var(--claro);border-radius:12px;padding:18px 8px;color:var(--escuro)}
+.ingresso dl{margin:0;display:grid;grid-template-columns:repeat(3,auto);gap:12px;justify-content:space-between}
+.ingresso dt{font-size:14px;color:var(--muted);font-weight:600}.ingresso dd{margin:0;font-weight:800}
+.ingresso.usada,.ingresso.cancelada{filter:grayscale(.9);opacity:.75}
+
+/* resultado da validação */
+.resultado{display:flex;gap:14px;align-items:flex-start;background:var(--suave);border-radius:16px;padding:18px 20px;max-width:520px}
+.resultado svg{flex:none;color:var(--medio)}
+.resultado strong{display:block;font:700 20px var(--fonte-titulo);color:var(--escuro)}
+.resultado p{margin:4px 0 0}
+.codigo-input{font:700 24px ui-monospace,Consolas,monospace!important;letter-spacing:.1em;text-transform:uppercase}
+
+@media(max-width:860px){
+  .app .w{padding:0 20px}
+  .app .topo .w{height:64px}
+  .app .brand{font-size:22px}
+  .app #nome{display:none}
+  .faixa .w{padding-top:28px}.faixa.sem-abas .w{padding-bottom:28px}
+  .faixa h1{font-size:30px}.faixa p{font-size:16px}
+  .nav{margin-top:20px}.nav a{padding:10px 16px}
+  .app main.w{padding-top:24px}
+  .det,.duas{grid-template-columns:1fr;gap:28px}
+  .det .caixa{position:static}
+  .codigo{font-size:30px}
+  .ingresso dl{grid-template-columns:1fr 1fr}
+  .lista>li,.lista>a{grid-template-columns:1fr}
+  .fim{justify-content:flex-start}
+}
+@media(max-width:420px){.app .papel{display:none}.app .brand{white-space:nowrap}}
+.lista .meta{overflow-wrap:anywhere}

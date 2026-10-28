@@ -1,0 +1,5 @@
+# Banco local: dados de teste e senhas (com hash) de quem se cadastrou. Cada computador tem o seu.
+db.json
+# Gerado pelo graphify; dá para recriar com /graphify .
+graphify-out/
+node_modules/

@@ -1,0 +1,160 @@
+const $ = id => document.getElementById(id), app = $('app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const brl = n => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const quando = i => new Date(i).toLocaleString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const PAPEL = { cliente: 'Viajante', operador: 'Operador de turismo', admin: 'Administrador' };
+const CATS = ['Natureza', 'Cultura', 'Vinícola', 'Trilha', 'Gastronomia'];
+const ST = { reservada: 'Reservada', usada: 'Usada', cancelada: 'Cancelada', aprovado: 'Publicado', pendente: 'Em análise', ativo: 'Ativo' };
+let U, OFFLINE = false, F = { cidade: '', cat: '' };
+
+const api = async (u, m = 'GET', b) => {
+  const r = await fetch(u, { method: m, headers: { 'Content-Type': 'application/json' }, body: b && JSON.stringify(b) });
+  if (r.status === 401) { localStorage.removeItem('vm_user'); location.href = '/entrar.html'; }
+  const j = await r.json(); if (!r.ok) throw new Error(j.erro); return j;
+};
+const erro = (el, e) => { el.textContent = e.message; el.className = 'msg erro'; };
+$('sair').onclick = async () => { try { await api('/api/logout', 'POST'); } catch {} localStorage.removeItem('vm_user'); localStorage.removeItem('vm_reservas'); location.href = '/'; };
+
+const ICONE = {
+  relogio: '<svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><circle cx="16" cy="16" r="12"/><path d="M16 9v7l5 3"/></svg>',
+  voltar: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>',
+  ok: '<svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="16" r="13"/><path d="M10 16.5l4 4 8-9"/></svg>',
+};
+
+const NAV = { cliente: [['/', 'Ofertas'], ['/reservas', 'Minhas reservas']], operador: [['/', 'Vagas'], ['/passeios', 'Passeios'], ['/validar', 'Validar código']], admin: [] };
+const nav = h => { const n = NAV[U.perfil]; return n.length ? `<nav class="nav" aria-label="Seções do painel">${n.map(([r, t]) => `<a href="#${r}" ${h === r || (r === '/reservas' && h.startsWith('/voucher')) || (r === '/' && h.startsWith('/oferta')) ? 'aria-current="page"' : ''}>${t}</a>`).join('')}</nav>` : ''; };
+// Monta a tela: faixa verde (título, explicação e abas) + conteúdo branco. Textos já devem vir escapados.
+const tela = (h, titulo, lead, html) => {
+  const n = h === null ? '' : nav(h);
+  $('faixa-w').innerHTML = `<h1>${titulo}</h1>${lead ? `<p>${lead}</p>` : ''}${n}`;
+  $('faixa').classList.toggle('sem-abas', !n);
+  app.innerHTML = html; document.title = titulo.replace(/<[^>]*>/g, '') + ' · Viaje Mais';
+};
+const vazio = (t, d = '') => `<div class="vazio"><strong>${t}</strong>${d ? `<p>${d}</p>` : ''}</div>`;
+
+/* ---------- VIAJANTE ---------- */
+const vagasTxt = o => `${o.livres === 1 ? 'Resta 1 vaga' : `Restam ${o.livres} vagas`} de ${o.vagas}`;
+// A barra mostra quanto do horário ainda está vazio: é isso que define o desconto.
+const ocupacao = o => `<div class="ocupacao"><div class="barra" aria-hidden="true"><i style="width:${Math.round(100 * o.livres / o.vagas)}%"></i></div><span>${vagasTxt(o)}</span></div>`;
+const selo = o => `<div class="selo${o.ultimaHora ? ' ultima' : ''}"><div>${o.desconto ? `<b>${o.desconto}%</b><span>de desconto</span>` : '<span>Preço normal</span>'}</div>${o.ultimaHora ? `<em>${ICONE.relogio}Última hora</em>` : ''}</div>`;
+const preco = o => `<p class="preco">${o.desconto ? `<s>${brl(o.precoNormal)}</s>` : ''}<strong>${brl(o.precoFinal)}</strong><small>por pessoa</small></p>`;
+const card = o => `<a class="oferta" href="#/oferta/${o.id}">${selo(o)}<div class="corpo"><span class="tag">${esc(o.categoria)}</span><h3>${esc(o.titulo)}</h3><p class="meta">${esc(o.cidade)}<br>${quando(o.inicio)}</p>${preco(o)}${ocupacao(o)}</div></a>`;
+
+async function vOfertas() {
+  let l; try { l = await api('/api/ofertas'); } catch (e) { if (e instanceof TypeError) { location.hash = '#/reservas'; return; } throw e; }
+  const opt = (arr, sel) => arr.map(v => `<option ${v === sel ? 'selected' : ''}>${esc(v)}</option>`).join('');
+  tela('/', 'Vagas de hoje em diante', 'Quanto mais vazio o horário, maior o desconto. Ao reservar, o preço fica travado.',
+    `<div class="filtros"><select id="fc" aria-label="Cidade"><option value="">Todas as cidades</option>${opt([...new Set(l.map(o => o.cidade))].sort(), F.cidade)}</select>
+    <select id="fk" aria-label="Categoria"><option value="">Todas as categorias</option>${opt([...new Set(l.map(o => o.categoria))].sort(), F.cat)}</select></div><div class="grade" id="g"></div>`);
+  const show = () => { const v = l.filter(o => (!F.cidade || o.cidade === F.cidade) && (!F.cat || o.categoria === F.cat)); $('g').innerHTML = v.length ? v.map(card).join('') : (l.length ? vazio('Nenhuma vaga com esses filtros.', 'Troque a cidade ou a categoria para ver outras vagas.') : vazio('Ainda não há vagas publicadas.', 'Os passeios avisam as vagas que sobram. Volte em breve.')); };
+  $('fc').onchange = e => { F.cidade = e.target.value; show(); }; $('fk').onchange = e => { F.cat = e.target.value; show(); }; show();
+}
+
+async function vOferta(id) {
+  const o = await api('/api/ofertas/' + id), max = Math.min(o.livres, 10);
+  tela('/oferta', esc(o.titulo), `${esc(o.cidade)}, ${quando(o.inicio)}. Oferecido por ${esc(o.operador)}.`,
+    `<a class="voltar" href="#/">${ICONE.voltar}Voltar às ofertas</a><div class="det"><div>
+    <div class="resumo">${selo(o)}<div class="corpo">${preco(o)}${ocupacao(o)}<p class="nota">Quanto mais vagas sobram, maior o desconto. Reservando agora, você garante este preço.</p></div></div>
+    <div class="sobre"><h2>Sobre o passeio</h2><p><span class="tag">${esc(o.categoria)}</span></p><p>${esc(o.descricao) || 'O operador ainda não escreveu uma descrição.'}</p></div></div>
+    <form class="caixa" id="r"><h2>Reservar</h2>
+    <div><label for="n">Seu nome</label><input id="n" value="${esc(U.nome)}" autocomplete="name" required></div>
+    <div><label for="t">Telefone com DDD</label><input id="t" type="tel" autocomplete="tel" placeholder="(55) 99999-9999" required></div>
+    <div><label for="q">Pessoas</label><select id="q">${Array.from({ length: max }, (_, i) => `<option>${i + 1}</option>`).join('')}</select></div>
+    <div class="total" id="tot"></div>
+    <p class="aviso">O pagamento por Pix entra na próxima etapa. Por enquanto a reserva gera o código para usar no local.</p>
+    <div class="msg" id="m" role="alert"></div><button class="btn">Confirmar reserva</button></form></div>`);
+  const tot = () => $('tot').textContent = 'Total: ' + brl(o.precoFinal * $('q').value); $('q').onchange = tot; tot();
+  $('r').onsubmit = async e => { e.preventDefault(); $('m').textContent = '';
+    try { const r = await api('/api/reservas', 'POST', { ofertaId: o.id, pessoas: +$('q').value, nome: $('n').value, telefone: $('t').value }); await carregarReservas(); location.hash = '#/voucher/' + r.id; }
+    catch (x) { erro($('m'), x); } };
+}
+
+async function carregarReservas() {
+  try { const l = await api('/api/reservas'); localStorage.setItem('vm_reservas', JSON.stringify(l)); return l; }
+  catch (e) { if (!(e instanceof TypeError)) throw e; OFFLINE = true; return JSON.parse(localStorage.getItem('vm_reservas') || '[]'); }
+}
+async function vReservas() {
+  const l = await carregarReservas();
+  tela('/reservas', 'Minhas reservas', 'Toque em uma reserva para ver o código.',
+    (OFFLINE ? '<p class="aviso" style="margin-bottom:20px">Sem internet: mostrando as reservas salvas neste aparelho. Seus códigos continuam valendo.</p>' : '') +
+    (l.length ? `<div class="lista">${l.map(r => `<a href="#/voucher/${r.id}"><div class="principal"><strong>${esc(r.titulo)}</strong><p class="meta">${esc(r.cidade)}, ${quando(r.inicio)}</p></div><div class="fim"><span class="tag ${r.status}">${ST[r.status]}</span><div class="valor">${brl(r.total)}<small>${r.pessoas} pessoa(s)</small></div></div></a>`).join('')}</div>`
+      : vazio('Você ainda não fez reservas.', 'Veja as <a href="#/">ofertas</a> e reserve uma vaga com desconto.')));
+}
+async function vVoucher(id) {
+  const r = (await carregarReservas()).find(x => x.id === +id);
+  if (!r) { location.hash = '#/reservas'; return; }
+  tela('/voucher', 'Seu voucher', 'Mostre este código no local. Ele fica salvo neste aparelho e funciona sem internet.',
+    `<a class="voltar" href="#/reservas">${ICONE.voltar}Minhas reservas</a>
+    <article class="ingresso ${r.status}"><header><span class="tag ${r.status}">${ST[r.status]}</span><h2>${esc(r.titulo)}</h2><p>${esc(r.cidade)}, ${quando(r.inicio)}</p></header>
+    <div class="corte" aria-hidden="true"></div>
+    <div class="ing-corpo"><p class="rotulo" id="rot">Código da reserva</p><div class="codigo" aria-labelledby="rot">${esc(r.codigo)}</div>
+    <dl><div><dt>Pessoas</dt><dd>${r.pessoas}</dd></div><div><dt>Em nome de</dt><dd>${esc(r.nome)}</dd></div><div><dt>Total</dt><dd>${brl(r.total)}</dd></div></dl>
+    <p class="meta">Preço com ${r.desconto}% de desconto, travado no momento da reserva.</p>
+    <div class="msg" id="m" role="alert"></div>
+    ${r.status === 'reservada' && !OFFLINE ? '<button class="btn sec" id="c">Cancelar reserva</button>' : ''}</div></article>`);
+  const c = $('c'); if (c) c.onclick = async () => { if (!confirm('Cancelar esta reserva?')) return; try { await api(`/api/reservas/${r.id}/cancelar`, 'POST'); await carregarReservas(); vVoucher(id); } catch (x) { erro($('m'), x); } };
+}
+
+/* ---------- OPERADOR ---------- */
+async function vVagas() {
+  const [of, ps] = await Promise.all([api('/api/operador/ofertas'), api('/api/operador/passeios')]), ok = ps.filter(p => p.status === 'aprovado');
+  tela('/', 'Publicar vagas', 'Avise as vagas que sobraram. O desconto sobe sozinho conforme o horário fica mais vazio.', `<div class="duas">
+  ${ok.length ? `<form class="caixa" id="f"><h2>Nova oferta</h2><div><label for="p">Passeio</label><select id="p">${ok.map(p => `<option value="${p.id}">${esc(p.titulo)}</option>`).join('')}</select></div>
+    <div><label for="i">Data e hora</label><input id="i" type="datetime-local" required></div><div><label for="v">Vagas disponíveis</label><input id="v" type="number" min="1" max="200" value="10" required></div>
+    <div><label for="d">Desconto máximo (%)</label><input id="d" type="number" min="0" max="90" value="50" required></div><div class="msg" id="m" role="alert"></div><button class="btn">Publicar vagas</button></form>`
+  : vazio('Você ainda não tem passeio aprovado.', 'Cadastre um na aba <a href="#/passeios">Passeios</a> e aguarde o administrador aprovar.')}
+  <section><h2>Suas ofertas</h2>${of.length ? `<ul class="lista">${of.map(o => `<li><div class="principal"><strong>${esc(o.titulo)}</strong><p class="meta">${quando(o.inicio)}</p>${new Date(o.inicio) < Date.now() ? '' : ocupacao(o)}</div><div class="fim">${new Date(o.inicio) < Date.now() ? '<span class="tag cancelada">Encerrada</span>' : o.desconto ? `<span class="agora"><b>${o.desconto}%</b> agora</span>` : '<span class="agora">Preço normal</span>'}</div></li>`).join('')}</ul>`
+    : vazio('Nenhuma oferta publicada ainda.', ok.length ? 'Preencha o formulário ao lado para avisar as vagas que sobraram.' : '')}</section></div>`);
+  const f = $('f'); if (f) f.onsubmit = async e => { e.preventDefault(); try { await api('/api/operador/ofertas', 'POST', { passeioId: $('p').value, inicio: new Date($('i').value).toISOString(), vagas: +$('v').value, descontoMax: +$('d').value }); vVagas(); } catch (x) { erro($('m'), x); } };
+}
+async function vPasseios() {
+  const l = await api('/api/operador/passeios');
+  tela('/passeios', 'Meus passeios', 'Novos passeios aparecem para os viajantes depois que o administrador aprova.', `<div class="duas"><form class="caixa" id="n"><h2>Novo passeio</h2>
+    <div><label for="t">Título</label><input id="t" required></div><div><label for="c">Cidade</label><input id="c" required></div>
+    <div><label for="k">Categoria</label><select id="k">${CATS.map(c => `<option>${c}</option>`).join('')}</select></div>
+    <div><label for="p">Preço normal (R$)</label><input id="p" type="number" min="0" step="0.01" required></div><div><label for="d">Descrição</label><textarea id="d" rows="3"></textarea></div>
+    <div class="msg" id="m" role="alert"></div><button class="btn">Enviar para aprovação</button></form>
+    <section><h2>Seus passeios</h2>${l.length ? `<ul class="lista">${l.map(p => `<li class="${p.status === 'pendente' ? 'pendente' : ''}"><div class="principal"><strong>${esc(p.titulo)}</strong><p class="meta">${esc(p.cidade)}, ${esc(p.categoria || 'Natureza')}</p></div><div class="fim"><span class="tag ${p.status}">${ST[p.status]}</span><div class="valor">${brl(p.preco)}</div><button class="btn peq perigo" data-del="${p.id}">Excluir</button></div></li>`).join('')}</ul>`
+      : vazio('Você ainda não cadastrou passeios.', 'Use o formulário ao lado. O administrador aprova antes de aparecer para os viajantes.')}</section></div>`);
+  $('n').onsubmit = async e => { e.preventDefault(); try { await api('/api/operador/passeios', 'POST', { titulo: $('t').value, cidade: $('c').value, categoria: $('k').value, preco: $('p').value, descricao: $('d').value }); vPasseios(); } catch (x) { erro($('m'), x); } };
+  app.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { try { await api('/api/operador/passeios/' + b.dataset.del, 'DELETE'); vPasseios(); } catch (x) { alert(x.message); } });
+}
+function vValidar() {
+  tela('/validar', 'Validar código', 'Digite o código que o turista mostrar no local. Cada código vale uma vez.',
+    `<div class="duas"><form class="caixa" id="v"><div><label for="c">Código da reserva</label><input id="c" class="codigo-input" autocomplete="off" autocapitalize="characters" required></div><div class="msg" id="m" role="alert"></div><button class="btn">Validar</button></form><div id="res" aria-live="polite"></div></div>`);
+  $('v').onsubmit = async e => { e.preventDefault(); $('m').textContent = ''; $('res').innerHTML = '';
+    try { const r = await api('/api/operador/validar', 'POST', { codigo: $('c').value });
+      $('res').innerHTML = `<div class="resultado">${ICONE.ok}<div><strong>Código válido</strong><p>${r.pessoas} pessoa(s) em nome de <b>${esc(r.nome)}</b></p><p class="meta">${esc(r.titulo)}, ${quando(r.inicio)}</p></div></div>`; $('c').value = ''; }
+    catch (x) { erro($('m'), x); } };
+}
+
+/* ---------- ADMIN ---------- */
+async function vAdmin() {
+  const [us, ps] = await Promise.all([api('/api/admin/usuarios'), api('/api/admin/passeios')]);
+  const nu = us.filter(u => u.status === 'pendente').length, np = ps.filter(p => p.status === 'pendente').length;
+  tela(null, 'Painel do administrador', nu || np ? `${nu} operador(es) e ${np} passeio(s) aguardando aprovação.` : 'Nada aguardando aprovação.', `
+  <section class="secao"><h2>Usuários</h2><ul class="lista">${us.map(u => `<li class="${u.status === 'pendente' ? 'pendente' : ''}"><div class="principal"><strong>${esc(u.nome)}</strong><p class="meta">${esc(u.email)}, ${PAPEL[u.perfil]}</p></div><div class="fim"><span class="tag ${u.status}">${ST[u.status]}</span><div class="acoes">${u.status === 'pendente' ? `<button class="btn peq" data-u="${u.id}">Aprovar</button>` : ''}${u.perfil !== 'admin' ? `<button class="btn peq perigo" data-ru="${u.id}">Remover</button>` : ''}</div></div></li>`).join('')}</ul></section>
+  <section class="secao"><h2>Passeios</h2>${ps.length ? `<ul class="lista">${ps.map(p => `<li class="${p.status === 'pendente' ? 'pendente' : ''}"><div class="principal"><strong>${esc(p.titulo)}</strong><p class="meta">${esc(p.cidade)}, por ${esc(p.operador)}</p></div><div class="fim"><span class="tag ${p.status}">${ST[p.status]}</span><div class="valor">${brl(p.preco)}</div>${p.status === 'pendente' ? `<button class="btn peq" data-p="${p.id}">Aprovar</button>` : ''}</div></li>`).join('')}</ul>` : vazio('Nenhum passeio cadastrado ainda.')}</section>`);
+  const go = (sel, url, m) => app.querySelectorAll(sel).forEach(b => b.onclick = async () => { if (m === 'DELETE' && !confirm('Remover este usuário?')) return; await api(url(b), m); vAdmin(); });
+  go('[data-u]', b => `/api/admin/usuarios/${b.dataset.u}/aprovar`, 'POST'); go('[data-ru]', b => `/api/admin/usuarios/${b.dataset.ru}`, 'DELETE'); go('[data-p]', b => `/api/admin/passeios/${b.dataset.p}/aprovar`, 'POST');
+}
+
+/* ---------- ROTAS ---------- */
+async function rota() {
+  const h = location.hash.slice(1) || '/', [, a, id] = h.split('/');
+  try {
+    if (U.perfil === 'admin') return await vAdmin();
+    if (U.perfil === 'operador') return await ({ '': vVagas, passeios: vPasseios, validar: vValidar }[a || ''] || vVagas)();
+    if (OFFLINE && !['reservas', 'voucher'].includes(a)) return location.hash = '#/reservas';
+    if (a === 'oferta') return await vOferta(id); if (a === 'reservas') return await vReservas(); if (a === 'voucher') return await vVoucher(id);
+    await vOfertas();
+  } catch (e) { tela(null, 'Não foi possível abrir esta tela', '', vazio(e instanceof TypeError ? 'Sem conexão com o servidor.' : esc(e.message), 'Confira a internet e tente de novo.')); }
+}
+(async () => {
+  try { U = await api('/api/me'); localStorage.setItem('vm_user', JSON.stringify(U)); }
+  catch (e) { if (e instanceof TypeError) { U = JSON.parse(localStorage.getItem('vm_user') || 'null'); OFFLINE = !!U; } }
+  if (!U) { location.href = '/entrar.html'; return; }
+  $('nome').textContent = U.nome; $('papel').textContent = PAPEL[U.perfil];
+  addEventListener('hashchange', rota); rota();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+})();

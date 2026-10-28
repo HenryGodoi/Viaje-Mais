@@ -1,0 +1,6 @@
+/* Viaje Mais — base de todas as páginas: cores, fontes e reset. Mude uma cor aqui e ela muda no site todo. */
+:root{
+  --escuro:#0E3B2B;--medio:#1E8A55;--claro:#EDF7F0;--suave:#D5EEDD;--lima:#B8E26B;--ink:#0E2A20;--muted:#3F5F50;--erro:#B3261E;--branco:#fff;
+  --pendente:#FFE9A8;--aviso:#FFF4CC;--cinza:#E3E3E3;
+  --fonte-texto:Nunito,sans-serif;--fonte-titulo:Fredoka,sans-serif}
+*{box-sizing:border-box}
