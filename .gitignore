@@ -3,3 +3,6 @@ db.json
 # Gerado pelo graphify; dá para recriar com /graphify .
 graphify-out/
 node_modules/
+# Anotações locais (regras de trabalho e histórico de versões); ficam só no computador.
+CLAUDE.md
+LEIA-ME.md

@@ -72,7 +72,7 @@ public/
   sw.js                service worker (cache offline)
 ```
 
-Sem dependências: o servidor usa só módulos nativos do Node.js e os dados ficam num arquivo JSON. Detalhes das regras, das rotas da API e das decisões do projeto estão no [CLAUDE.md](CLAUDE.md). O histórico de versões está no [LEIA-ME.md](LEIA-ME.md).
+Sem dependências: o servidor usa só módulos nativos do Node.js e os dados ficam num arquivo JSON. As rotas da API estão listadas nos arquivos de `src/rotas/`.
 
 ## Testar no celular
 
