@@ -5,11 +5,14 @@ const quando = i => new Date(i).toLocaleString('pt-BR', { weekday: 'short', day:
 const PAPEL = { cliente: 'Viajante', operador: 'Operador de turismo', admin: 'Administrador' };
 const CATS = ['Natureza', 'Cultura', 'Vinícola', 'Trilha', 'Gastronomia'];
 const ST = { reservada: 'Reservada', usada: 'Usada', cancelada: 'Cancelada', aprovado: 'Publicado', pendente: 'Em análise', ativo: 'Ativo' };
-let U, OFFLINE = false, F = { cidade: '', cat: '' };
+let U, OFFLINE = false, F = { cidade: '', cat: '', q: '' };
+// Manda para o login guardando esta tela, para voltar a ela depois de entrar.
+const paraLogin = () => location.href = '/entrar.html?ir=' + encodeURIComponent(location.pathname + location.hash);
+const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 const api = async (u, m = 'GET', b) => {
   const r = await fetch(u, { method: m, headers: { 'Content-Type': 'application/json' }, body: b && JSON.stringify(b) });
-  if (r.status === 401) { localStorage.removeItem('vm_user'); location.href = '/entrar.html'; }
+  if (r.status === 401) { localStorage.removeItem('vm_user'); paraLogin(); }
   const j = await r.json(); if (!r.ok) throw new Error(j.erro); return j;
 };
 const erro = (el, e) => { el.textContent = e.message; el.className = 'msg erro'; };
@@ -44,9 +47,10 @@ async function vOfertas() {
   let l; try { l = await api('/api/ofertas'); } catch (e) { if (e instanceof TypeError) { location.hash = '#/reservas'; return; } throw e; }
   const opt = (arr, sel) => arr.map(v => `<option ${v === sel ? 'selected' : ''}>${esc(v)}</option>`).join('');
   tela('/', 'Vagas de hoje em diante', 'Quanto mais vazio o horário, maior o desconto. Ao reservar, o preço fica travado.',
-    `<div class="filtros"><select id="fc" aria-label="Cidade"><option value="">Todas as cidades</option>${opt([...new Set(l.map(o => o.cidade))].sort(), F.cidade)}</select>
+    `<div class="filtros"><input id="fq" type="search" aria-label="Buscar passeio ou cidade" placeholder="Buscar passeio ou cidade" value="${esc(F.q)}"><select id="fc" aria-label="Cidade"><option value="">Todas as cidades</option>${opt([...new Set(l.map(o => o.cidade))].sort(), F.cidade)}</select>
     <select id="fk" aria-label="Categoria"><option value="">Todas as categorias</option>${opt([...new Set(l.map(o => o.categoria))].sort(), F.cat)}</select></div><div class="grade" id="g"></div>`);
-  const show = () => { const v = l.filter(o => (!F.cidade || o.cidade === F.cidade) && (!F.cat || o.categoria === F.cat)); $('g').innerHTML = v.length ? v.map(card).join('') : (l.length ? vazio('Nenhuma vaga com esses filtros.', 'Troque a cidade ou a categoria para ver outras vagas.') : vazio('Ainda não há vagas publicadas.', 'Os passeios avisam as vagas que sobram. Volte em breve.')); };
+  const show = () => { const v = l.filter(o => (!F.cidade || o.cidade === F.cidade) && (!F.cat || o.categoria === F.cat) && norm(o.titulo + ' ' + o.cidade + ' ' + o.categoria).includes(norm(F.q.trim()))); $('g').innerHTML = v.length ? v.map(card).join('') : (l.length ? vazio('Nenhuma vaga com esses filtros.', 'Troque a busca, a cidade ou a categoria para ver outras vagas.') : vazio('Ainda não há vagas publicadas.', 'Os passeios avisam as vagas que sobram. Volte em breve.')); };
+  $('fq').oninput = e => { F.q = e.target.value; show(); };
   $('fc').onchange = e => { F.cidade = e.target.value; show(); }; $('fk').onchange = e => { F.cat = e.target.value; show(); }; show();
 }
 
@@ -141,7 +145,9 @@ async function vAdmin() {
 
 /* ---------- ROTAS ---------- */
 async function rota() {
-  const h = location.hash.slice(1) || '/', [, a, id] = h.split('/');
+  // A home manda a busca no endereço: #/?busca=Nova%20Palma
+  const [h, qs] = (location.hash.slice(1) || '/').split('?'), [, a, id] = h.split('/');
+  if (qs) F.q = new URLSearchParams(qs).get('busca') || '';
   try {
     if (U.perfil === 'admin') return await vAdmin();
     if (U.perfil === 'operador') return await ({ '': vVagas, passeios: vPasseios, validar: vValidar }[a || ''] || vVagas)();
@@ -153,7 +159,7 @@ async function rota() {
 (async () => {
   try { U = await api('/api/me'); localStorage.setItem('vm_user', JSON.stringify(U)); }
   catch (e) { if (e instanceof TypeError) { U = JSON.parse(localStorage.getItem('vm_user') || 'null'); OFFLINE = !!U; } }
-  if (!U) { location.href = '/entrar.html'; return; }
+  if (!U) { paraLogin(); return; }
   $('nome').textContent = U.nome; $('papel').textContent = PAPEL[U.perfil];
   addEventListener('hashchange', rota); rota();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');

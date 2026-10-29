@@ -71,6 +71,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--medio);outline:0}
 
 /* filtros */
 .filtros{display:flex;gap:12px;margin:0 0 28px;flex-wrap:wrap}.filtros select{width:auto;min-width:200px}
+.filtros input{flex:1 1 260px;max-width:420px}
 
 /* cartão de oferta: o selo verde mostra o desconto, a barra mostra quanto do horário está vazio */
 .grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:24px}

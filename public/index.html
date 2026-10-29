@@ -26,13 +26,17 @@
 
 <section class="hero">
   <div class="w">
-    <div style="flex:1 1 480px">
-      <div class="eyebrow">Quarta Colônia · Rio Grande do Sul</div>
-      <h1>Descubra a Quarta Colônia do seu jeito</h1>
-      <p>Destinos, sabores e roteiros da região reunidos em um só lugar, para planejar sua viagem sem complicação.</p>
-      <form class="busca" id="busca"><label for="d" class="sr">Destino</label><input id="d" placeholder="Para onde você quer ir?"><button type="submit">Buscar</button></form>
+    <div class="chamada">
+      <h1>Vagas que sobraram nos passeios da Quarta Colônia, com desconto.</h1>
+      <p>Quanto mais vazio o horário, mais barato. Reserve pelo celular e mostre o código no local.</p>
+      <form class="busca" id="busca"><label for="d" class="sr">Destino</label><input id="d" type="search" placeholder="Para onde você quer ir?"><button type="submit">Buscar</button></form>
+      <a class="operador" href="/entrar.html#operador">Tenho um passeio para divulgar</a>
     </div>
-    <div class="foto"><span>[Foto principal da região]</span></div>
+    <section class="quadro" aria-labelledby="quadro-t">
+      <div class="quadro-topo"><h2 id="quadro-t">Próximas saídas</h2><span id="hora" aria-label="Hora agora"></span></div>
+      <ol id="saidas"><li class="quadro-msg">Carregando as próximas saídas…</li></ol>
+      <a class="quadro-todas" href="/painel.html">Ver todas as vagas</a>
+    </section>
   </div>
 </section>
 

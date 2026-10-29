@@ -12,7 +12,11 @@ function trocar(m) {
   $('senha').autocomplete = c ? 'new-password' : 'current-password'; msg('');
 }
 $('aba-entrar').onclick = () => trocar('entrar'); $('aba-criar').onclick = () => trocar('criar');
-if (location.hash === '#criar') trocar('criar');
+if (location.hash === '#criar' || location.hash === '#operador') trocar('criar');
+if (location.hash === '#operador') document.querySelector('[name=perfil][value=operador]').checked = true;
+// Depois de entrar, vai para o menu principal ou para onde a pessoa estava indo (?ir=/painel.html#/oferta/7).
+// Só aceita caminhos deste site: "//site.com" ou "/\site.com" levariam para outro endereço.
+const ir = new URLSearchParams(location.search).get('ir'), destino = /^\/(?![\/\\])/.test(ir || '') ? ir : '/painel.html';
 const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(async r => ({ ok: r.ok, ...(await r.json()) }));
 $('google').onclick = async () => msg((await post('/api/auth/google', {})).erro);
 $('f').onsubmit = async e => {
@@ -23,7 +27,7 @@ $('f').onsubmit = async e => {
   $('ok').disabled = false;
   if (!r.ok) return msg(r.erro);
   if (r.aviso) { msg(r.aviso, 'ok'); return trocar('entrar'), msg(r.aviso, 'ok'); }
-  location.href = '/';
+  location.href = destino;
 };
-fetch('/api/me').then(r => r.ok && (location.href = '/')).catch(() => localStorage.getItem('vm_user') && (location.href = '/'));
+fetch('/api/me').then(r => r.ok && (location.href = destino)).catch(() => localStorage.getItem('vm_user') && (location.href = destino));
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');

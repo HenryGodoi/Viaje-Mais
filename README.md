@@ -43,6 +43,7 @@ Dois perfis ao mesmo tempo precisam de navegadores ou janelas anônimas separada
 
 ## O que já funciona
 
+- **Página inicial** com o quadro "Próximas saídas": as próximas vagas reais aparecem mesmo sem login. A busca e cada saída levam ao login e, depois dele, direto para as ofertas filtradas ou para a oferta escolhida.
 - **Desconto dinâmico:** `desconto = descontoMax × vagas livres ÷ vagas`. Faltando 2 horas ou menos, vai ao desconto máximo e aparece o selo "Última hora".
 - **Reserva** de 1 a 10 pessoas, com nome e telefone. O preço fica travado no momento da reserva. Se as vagas acabarem durante a reserva, o app avisa.
 - **Voucher** com código de 8 caracteres, salvo no aparelho para abrir sem internet.

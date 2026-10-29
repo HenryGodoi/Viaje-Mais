@@ -6,6 +6,8 @@ const { falta, pct, vis, rvis } = require('../regras');
 const { send } = require('../http');
 
 const aprovado = o => db.passeios.find(x => x.id === o?.passeioId)?.status === 'aprovado';
+// Ofertas que o viajante pode reservar: passeio aprovado, horário futuro e vaga livre. Mais cedo primeiro.
+const abertas = () => db.ofertas.filter(o => o.livres > 0 && new Date(o.inicio) > new Date() && aprovado(o)).map(vis).sort((a, c) => a.inicio.localeCompare(c.inicio));
 
 module.exports = [
   // Operador
@@ -30,9 +32,12 @@ module.exports = [
     send(res, 200, { ok: true, ...rvis(r) });
   } },
 
+  // Pública: próximas saídas para o quadro da home. Só o necessário, sem operador nem descrição.
+  { metodo: 'GET', caminho: '/api/vitrine', fazer: ({ res }) =>
+    send(res, 200, abertas().slice(0, 4).map(o => ({ id: o.id, inicio: o.inicio, titulo: o.titulo, cidade: o.cidade, livres: o.livres, vagas: o.vagas, desconto: o.desconto, ultimaHora: o.ultimaHora }))) },
+
   // Viajante
-  { metodo: 'GET', caminho: '/api/ofertas', quem: 'logado', fazer: ({ res }) =>
-    send(res, 200, db.ofertas.filter(o => o.livres > 0 && new Date(o.inicio) > new Date() && aprovado(o)).map(vis).sort((a, c) => a.inicio.localeCompare(c.inicio))) },
+  { metodo: 'GET', caminho: '/api/ofertas', quem: 'logado', fazer: ({ res }) => send(res, 200, abertas()) },
   { metodo: 'GET', caminho: '/api/ofertas/:id', quem: 'logado', fazer: ({ res, id }) => {
     const o = db.ofertas.find(x => x.id === id);
     if (!o || !aprovado(o)) return send(res, 404, { erro: 'Oferta não encontrada.' });
