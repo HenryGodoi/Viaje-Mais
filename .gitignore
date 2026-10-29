@@ -1,8 +1,12 @@
-# Banco local: dados de teste e senhas (com hash) de quem se cadastrou. Cada computador tem o seu.
-db.json
+# Banco local: dados e senhas (com hash) de quem se cadastrou. Cada computador tem o seu.
+# Tudo em banco-de-dados/ fica fora do GitHub, menos o README (inclui cópias de backup).
+banco-de-dados/*
+!banco-de-dados/README.md
+# Rede de segurança: um db.json (ou cópia dele) esquecido em qualquer outra pasta.
+db*.json
 # Gerado pelo graphify; dá para recriar com /graphify .
 graphify-out/
 node_modules/
 # Anotações locais (regras de trabalho e histórico de versões); ficam só no computador.
 CLAUDE.md
-LEIA-ME.md
+/LEIA-ME.md

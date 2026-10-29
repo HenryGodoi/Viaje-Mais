@@ -5,6 +5,16 @@ PWA de turismo para a **Quarta Colônia (RS)**. Mostra as vagas que sobraram em 
 Projeto campeão do **Ideathon 2026**. Próxima etapa: Startcup.
 Equipe: Henry Azambuja Godoi (desenvolvimento), Enzo Ueno e Samuel Fritz.
 
+## Onde está cada coisa
+
+| Pasta | O que tem |
+|---|---|
+| [`frontend/`](frontend/) | O que aparece na tela: páginas, estilos e o JavaScript que roda no navegador |
+| [`backend/`](backend/) | O servidor: regras de negócio, login e a API (`/api/...`) |
+| [`banco-de-dados/`](banco-de-dados/) | Onde os dados ficam (o arquivo `db.json`, que não vai para o GitHub) e a estrutura deles |
+
+Cada pasta tem o seu README explicando o que é cada arquivo. Na raiz ficam só o `server.js`, que liga o backend, e o atalho `INICIAR.bat`.
+
 ## O problema e a ideia
 
 Passeios saem com vagas sobrando: o dono gasta o mesmo e ganha menos. Ao mesmo tempo, muitos turistas deixam de passear por achar caro. O Viaje Mais junta os dois lados, inspirado no app Primeira Mesa (descontos em restaurantes nos horários vazios), e reúne em um só lugar as atrações das nove cidades da região: Agudo, Dona Francisca, Faxinal do Soturno, Ivorá, Nova Palma, Pinhal Grande, Restinga Sêca, São João do Polêsine e Silveira Martins.
@@ -21,7 +31,7 @@ Abra http://localhost:3000. No Windows, também dá para dar dois cliques em `IN
 
 Para usar outra porta: `PORT=4000 node server.js` (no PowerShell: `$env:PORT=4000; node server.js`).
 
-Na primeira execução o servidor cria o arquivo `db.json` com dados de demonstração. Para começar do zero, feche o servidor e apague esse arquivo.
+Na primeira execução o servidor cria o arquivo `banco-de-dados/db.json` com dados de demonstração. Para começar do zero, feche o servidor e apague esse arquivo.
 
 ### Contas de teste
 
@@ -57,24 +67,28 @@ Dois perfis ao mesmo tempo precisam de navegadores ou janelas anônimas separada
 ## Estrutura
 
 ```
-server.js              liga tudo: entrega as páginas e procura a rota da API
-src/
-  config.js            constantes (porta, categorias, 2h de última hora, 3h para cancelar)
-  banco.js             db.json e dados de demonstração
-  seguranca.js         senhas e código do voucher
-  sessoes.js           login por cookie
-  regras.js            cálculo do desconto
-  rotas/               API: conta.js, passeios.js, ofertas.js
-public/
-  index.html           página inicial
-  entrar.html          login e cadastro
-  painel.html          área logada (viajante, operador, administrador)
-  css/                 base.css (cores e fontes), home.css, app.css
-  js/                  home.js, entrar.js, painel.js
-  sw.js                service worker (cache offline)
+server.js                  ponto de partida: só liga o backend
+INICIAR.bat                dois cliques para ligar no Windows
+frontend/                  o que o navegador baixa (cada arquivo é um endereço do site)
+  index.html               página inicial
+  entrar.html              login e cadastro
+  painel.html              área logada (viajante, operador, administrador)
+  css/                     base.css (cores e fontes), home.css, app.css
+  js/                      home.js, entrar.js, painel.js
+  sw.js                    service worker (cache offline)
+backend/                   o servidor
+  servidor.js              entrega o frontend ou chama a rota da API
+  config.js                constantes (porta, categorias, 2h de última hora, 3h para cancelar)
+  banco.js                 lê e grava banco-de-dados/db.json
+  dados-demonstracao.js    contas de teste do primeiro uso
+  seguranca.js             senhas e código do voucher
+  sessoes.js               login por cookie
+  regras.js                cálculo do desconto
+  rotas/                   API: conta.js, perfil.js, passeios.js, ofertas.js
+banco-de-dados/            db.json (fora do GitHub) e a explicação da estrutura dos dados
 ```
 
-Sem dependências: o servidor usa só módulos nativos do Node.js e os dados ficam num arquivo JSON. As rotas da API estão listadas nos arquivos de `src/rotas/`.
+Sem dependências: o servidor usa só módulos nativos do Node.js e os dados ficam num arquivo JSON. As rotas da API estão nos arquivos de `backend/rotas/`.
 
 ## Testar no celular
 
@@ -92,6 +106,6 @@ Depois de atualizar o código, aperte **Ctrl + Shift + R** no navegador para nã
 
 - Pagamento por Pix e QR code no voucher (hoje a reserva gera só o código).
 - Entrar com Google (o botão existe, mas falta configurar o Client ID).
-- Ofertas reais de última hora na página inicial e páginas por cidade e por roteiro.
+- Páginas por cidade e por roteiro.
 - Newsletter, avaliações, avisos de última hora por notificação ou WhatsApp, pacotes passeio + jantar e painel de comissão.
 - Para produção: banco de dados de verdade, HTTPS e recuperação de senha.
