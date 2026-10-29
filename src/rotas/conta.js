@@ -14,7 +14,7 @@ module.exports = [
     if (b.senha !== b.confirmar) return send(res, 400, { erro: 'As senhas não são iguais.' });
     if (db.users.some(u => u.email === email)) return send(res, 409, { erro: 'Este e-mail já está cadastrado.' });
     const perfil = b.perfil === 'operador' ? 'operador' : 'cliente';
-    const u = { id: db.seq++, nome: String(b.nome).trim(), email, senha: hash(b.senha), perfil, status: perfil === 'operador' ? 'pendente' : 'ativo' };
+    const u = { id: db.seq++, nome: String(b.nome).trim(), email, senha: hash(String(b.senha)), perfil, status: perfil === 'operador' ? 'pendente' : 'ativo' };
     db.users.push(u); save();
     if (u.status === 'ativo') { entrar(res, u); return send(res, 201, { ok: true, usuario: pub(u) }); }
     send(res, 201, { ok: true, aviso: 'Cadastro enviado. O administrador precisa aprovar seu perfil antes do primeiro acesso.' });

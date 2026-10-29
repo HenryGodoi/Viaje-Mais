@@ -7,6 +7,7 @@ button{font:inherit;cursor:pointer}
 .btn{border:0;border-radius:10px;padding:14px 22px;font-weight:700;font-size:16px;background:var(--escuro);color:var(--branco)}
 .btn.sec{background:var(--branco);color:var(--ink);border:2px solid var(--suave)}
 .btn.peq{padding:8px 14px;font-size:14px}.btn.perigo{background:var(--erro)}
+.btn:disabled{opacity:.6;cursor:progress}
 label{display:block;font-weight:700;font-size:15px;margin-bottom:8px}
 input,textarea,select{width:100%;font:inherit;padding:14px 16px;border:2px solid var(--suave);border-radius:10px;background:var(--branco);color:var(--ink)}
 input:focus,textarea:focus,select:focus{border-color:var(--medio);outline:0}

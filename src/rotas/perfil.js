@@ -9,7 +9,9 @@ const FOTO = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/;
 const MAX_FOTO = 300000;
 
 module.exports = [
-  { metodo: 'POST', caminho: '/api/perfil', quem: 'logado', fazer: ({ res, me, b }) => {
+  // Nome, telefone e foto são do perfil do viajante. O nome do operador aparece para todos os viajantes
+  // ("Oferecido por …") e não pode ser trocado por aqui, sem o admin saber. A troca de senha vale para todos.
+  { metodo: 'POST', caminho: '/api/perfil', quem: 'cliente', fazer: ({ res, me, b }) => {
     const nome = String(b.nome || '').trim(), tel = String(b.telefone || '').trim(), dig = tel.replace(/\D/g, '');
     if (nome.length < 2) return send(res, 400, { erro: 'Informe seu nome completo.' });
     if (tel && (dig.length < 10 || dig.length > 13)) return send(res, 400, { erro: 'Informe um telefone com DDD ou deixe o campo vazio.' });
@@ -17,13 +19,13 @@ module.exports = [
     send(res, 200, { ok: true, nome, telefone: tel });
   } },
 
-  { metodo: 'GET', caminho: '/api/perfil/foto', quem: 'logado', fazer: ({ res, me }) => {
+  { metodo: 'GET', caminho: '/api/perfil/foto', quem: 'cliente', fazer: ({ res, me }) => {
     if (!me.foto) return send(res, 404, { erro: 'Você ainda não tem foto.' });
     const [, tipo, dados] = me.foto.match(/^data:(image\/\w+);base64,(.+)$/);
     res.writeHead(200, { 'Content-Type': tipo, 'Cache-Control': 'private, no-cache' });
     res.end(Buffer.from(dados, 'base64'));
   } },
-  { metodo: 'POST', caminho: '/api/perfil/foto', quem: 'logado', fazer: ({ res, me, b }) => {
+  { metodo: 'POST', caminho: '/api/perfil/foto', quem: 'cliente', fazer: ({ res, me, b }) => {
     if (b.foto === null) { delete me.foto; save(); return send(res, 200, { ok: true, temFoto: false }); }
     if (typeof b.foto !== 'string' || !FOTO.test(b.foto)) return send(res, 400, { erro: 'Escolha uma imagem JPG, PNG ou WebP.' });
     if (b.foto.length > MAX_FOTO) return send(res, 400, { erro: 'A foto ficou grande demais. Tente outra imagem.' });
@@ -34,7 +36,7 @@ module.exports = [
     if (!check(String(b.atual || ''), me.senha)) return send(res, 400, { erro: 'A senha atual não confere.' });
     if (String(b.nova || '').length < 8) return send(res, 400, { erro: 'A nova senha precisa ter ao menos 8 caracteres.' });
     if (b.nova !== b.confirmar) return send(res, 400, { erro: 'As senhas novas não são iguais.' });
-    me.senha = hash(b.nova); save();
+    me.senha = hash(String(b.nova)); save(); // String(): uma senha enviada como número não pode dar erro 500
     sairDosOutros(me.id, tok); // quem estava logado com a senha antiga em outro aparelho precisa entrar de novo
     send(res, 200, { ok: true });
   } },

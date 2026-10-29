@@ -15,8 +15,10 @@ $('aba-entrar').onclick = () => trocar('entrar'); $('aba-criar').onclick = () =>
 if (location.hash === '#criar' || location.hash === '#operador') trocar('criar');
 if (location.hash === '#operador') document.querySelector('[name=perfil][value=operador]').checked = true;
 // Depois de entrar, vai para o menu principal ou para onde a pessoa estava indo (?ir=/painel.html#/oferta/7).
-// Só aceita caminhos deste site: "//site.com" ou "/\site.com" levariam para outro endereço.
-const ir = new URLSearchParams(location.search).get('ir'), destino = /^\/(?![\/\\])/.test(ir || '') ? ir : '/painel.html';
+// O endereço é montado do mesmo jeito que o navegador monta e só vale se continuar neste site.
+// Conferir o texto não basta: o navegador apaga TAB e quebra de linha, e "/<TAB>/site.com" vira "//site.com".
+const destinoSeguro = (ir, origem) => { try { const u = new URL(ir || '/painel.html', origem); return u.origin === origem ? u.pathname + u.search + u.hash : '/painel.html'; } catch { return '/painel.html'; } };
+const destino = destinoSeguro(new URLSearchParams(location.search).get('ir'), location.origin);
 const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(async r => ({ ok: r.ok, ...(await r.json()) }));
 $('google').onclick = async () => msg((await post('/api/auth/google', {})).erro);
 $('f').onsubmit = async e => {
