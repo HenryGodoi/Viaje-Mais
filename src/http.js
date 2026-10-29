@@ -6,8 +6,12 @@ const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=
 
 const send = (r, c, o) => { r.writeHead(c, { 'Content-Type': 'application/json' }); r.end(JSON.stringify(o)); };
 
+// Devolve null se o corpo passar de 400 KB (a foto de perfil, já reduzida no navegador, fica bem abaixo disso).
+const LIMITE = 400 * 1024;
 const lerCorpo = async req => {
-  let raw = ''; for await (const c of req) raw += c;
+  let raw = '', grande = false;
+  for await (const c of req) { if (raw.length + c.length > LIMITE) grande = true; else raw += c; }
+  if (grande) return null;
   try { return JSON.parse(raw || '{}'); } catch { return {}; }
 };
 

@@ -6,9 +6,10 @@ const hhmm = d => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-di
 $('busca').onsubmit = e => { e.preventDefault(); const q = $('d').value.trim(); location.href = '/painel.html' + (q ? '#/?busca=' + encodeURIComponent(q) : ''); };
 // Newsletter ainda não tem back-end: avisa com honestidade em vez de fingir que cadastrou
 $('news').onsubmit = e => { e.preventDefault(); $('nmsg').textContent = 'Em breve! Ainda estamos montando essa parte.'; };
-// Se já estiver logado, "Entrar" vira "Meu painel" e o botão principal leva direto para as ofertas
-const logado = () => { $('entrar').textContent = 'Meu painel'; $('entrar').href = '/painel.html'; $('cta').textContent = 'Ver ofertas'; };
-fetch('/api/me').then(r => r.ok ? logado() : localStorage.removeItem('vm_user')).catch(() => localStorage.getItem('vm_user') && logado());
+// Se já estiver logado: "Meu painel" abre o perfil (viajante) e "Ver ofertas" abre a lista de vagas
+const logado = u => { $('entrar').textContent = 'Meu painel'; $('entrar').href = u?.perfil === 'cliente' ? '/painel.html#/perfil' : '/painel.html'; $('cta').textContent = 'Ver ofertas'; };
+fetch('/api/me').then(r => r.ok ? r.json().then(logado) : localStorage.removeItem('vm_user'))
+  .catch(() => { const u = JSON.parse(localStorage.getItem('vm_user') || 'null'); if (u) logado(u); });
 
 // Quadro "Próximas saídas": relógio de agora + as próximas vagas reais
 const relogio = () => $('hora').textContent = hhmm(new Date());

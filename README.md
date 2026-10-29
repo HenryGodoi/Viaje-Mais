@@ -49,6 +49,7 @@ Dois perfis ao mesmo tempo precisam de navegadores ou janelas anônimas separada
 - **Voucher** com código de 8 caracteres, salvo no aparelho para abrir sem internet.
 - **Cancelamento** pelo viajante até 3 horas antes, com as vagas devolvidas à oferta.
 - **Validação do código** pelo operador no local, uma única vez.
+- **Perfil do viajante:** foto, nome e telefone, troca de senha, exclusão da conta, histórico de reservas e quanto já economizou com os descontos.
 - **Três perfis:** viajante (ofertas, reservas, voucher), operador (passeios, vagas, validação) e administrador (aprova operadores e passeios).
 - **Segurança:** senhas com scrypt e sal aleatório, sessão em cookie HttpOnly, validação de tudo no servidor e texto escapado na tela.
 - **PWA:** instalável e com cache offline das telas.

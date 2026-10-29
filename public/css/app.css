@@ -137,6 +137,27 @@ input:focus,textarea:focus,select:focus{border-color:var(--medio);outline:0}
 .ingresso dt{font-size:14px;color:var(--muted);font-weight:600}.ingresso dd{margin:0;font-weight:800}
 .ingresso.usada,.ingresso.cancelada{filter:grayscale(.9);opacity:.75}
 
+/* perfil do viajante */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.sr:focus-visible+label{outline:3px solid var(--medio);outline-offset:2px}
+.eu{text-decoration:none;border-radius:50%}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--claro);color:var(--escuro);display:inline-flex;align-items:center;justify-content:center;font:700 16px var(--fonte-titulo);overflow:hidden;flex:none;border:2px solid var(--suave)}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.avatar.grande{width:112px;height:112px;font-size:44px;border-width:3px}
+.perfil{display:grid;grid-template-columns:300px 1fr;gap:40px;align-items:start}
+.cartao-perfil{border:1px solid var(--suave);border-radius:16px;padding:28px 24px;display:grid;justify-items:center;gap:10px;text-align:center;position:sticky;top:20px}
+.cartao-perfil h2{margin:6px 0 0;font-size:24px}
+.cartao-perfil label.btn{margin:8px 0 0;cursor:pointer}
+.link{background:none;border:0;padding:0;color:var(--muted);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.numeros{margin:14px 0 0;padding-top:16px;border-top:1px solid var(--suave);width:100%;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.numeros dt{font-size:13px;color:var(--muted);font-weight:700}
+.numeros dd{margin:2px 0 0;font:700 22px var(--fonte-titulo);color:var(--escuro)}
+.perfil-secoes .caixa{max-width:560px}
+.perfil-secoes .nota{margin:6px 0 0}
+input:disabled{background:var(--claro);color:var(--muted)}
+.zona-perigo{border-color:color-mix(in srgb,var(--erro) 35%,var(--branco))}
+.zona-perigo h2{color:var(--erro)}
+
 /* resultado da validação */
 .resultado{display:flex;gap:14px;align-items:flex-start;background:var(--suave);border-radius:16px;padding:18px 20px;max-width:520px}
 .resultado svg{flex:none;color:var(--medio)}
@@ -153,12 +174,13 @@ input:focus,textarea:focus,select:focus{border-color:var(--medio);outline:0}
   .faixa h1{font-size:30px}.faixa p{font-size:16px}
   .nav{margin-top:20px}.nav a{padding:10px 16px}
   .app main.w{padding-top:24px}
-  .det,.duas{grid-template-columns:1fr;gap:28px}
+  .det,.duas,.perfil{grid-template-columns:1fr;gap:28px}
+  .cartao-perfil{position:static}
   .det .caixa{position:static}
   .codigo{font-size:30px}
   .ingresso dl{grid-template-columns:1fr 1fr}
   .lista>li,.lista>a{grid-template-columns:1fr}
   .fim{justify-content:flex-start}
 }
-@media(max-width:420px){.app .papel{display:none}.app .brand{white-space:nowrap}}
+@media(max-width:420px){.app .papel{display:none}.app .brand{white-space:nowrap}.nav{gap:0;scrollbar-width:none}.nav a{padding:10px;font-size:14px}}
 .lista .meta{overflow-wrap:anywhere}

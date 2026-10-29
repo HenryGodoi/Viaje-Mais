@@ -6,7 +6,7 @@ const { send, lerCorpo, arquivo } = require('./src/http');
 const { lerSessao } = require('./src/sessoes');
 
 // Cada rota: { metodo, caminho, quem, fazer }. quem: vazio = público, 'logado' = qualquer conta, ou um perfil.
-const rotas = [...require('./src/rotas/conta'), ...require('./src/rotas/passeios'), ...require('./src/rotas/ofertas')]
+const rotas = [...require('./src/rotas/conta'), ...require('./src/rotas/perfil'), ...require('./src/rotas/passeios'), ...require('./src/rotas/ofertas')]
   .map(r => ({ ...r, re: new RegExp('^' + r.caminho.replace(':id', '(\\d+)') + '$') }));
 
 http.createServer(async (req, res) => {
@@ -20,7 +20,9 @@ http.createServer(async (req, res) => {
   if (rota.quem && !me) return send(res, 401, { erro: 'Entre na sua conta para continuar.' });
   if (rota.quem && rota.quem !== 'logado' && me.perfil !== rota.quem) return send(res, 403, { erro: 'Você não tem permissão para isso.' });
 
+  const b = await lerCorpo(req);
+  if (b === null) return send(res, 413, { erro: 'O envio passou do tamanho permitido.' });
   // Um erro inesperado responde 500 em vez de derrubar o servidor inteiro.
-  try { rota.fazer({ req, res, b: await lerCorpo(req), me, tok, id: id[1] && +id[1] }); }
+  try { rota.fazer({ req, res, b, me, tok, id: id[1] && +id[1] }); }
   catch (e) { console.error(e); if (!res.headersSent) send(res, 500, { erro: 'Erro no servidor. Tente de novo.' }); }
 }).listen(PORTA, () => console.log('Viaje Mais em http://localhost:' + PORTA));

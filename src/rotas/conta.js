@@ -29,7 +29,7 @@ module.exports = [
 
   { metodo: 'POST', caminho: '/api/logout', fazer: ({ res, tok }) => { sair(res, tok); send(res, 200, { ok: true }); } },
 
-  { metodo: 'GET', caminho: '/api/me', quem: 'logado', fazer: ({ res, me }) => send(res, 200, pub(me)) },
+  { metodo: 'GET', caminho: '/api/me', quem: 'logado', fazer: ({ res, me }) => send(res, 200, { ...pub(me), telefone: me.telefone || '', temFoto: !!me.foto }) },
 
   { metodo: '*', caminho: '/api/auth/google', fazer: ({ res }) => send(res, 501, { erro: 'Login com Google ainda não está configurado: falta criar o Client ID no Google Cloud.' }) },
 ];

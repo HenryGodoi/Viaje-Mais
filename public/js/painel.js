@@ -24,7 +24,7 @@ const ICONE = {
   ok: '<svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="16" r="13"/><path d="M10 16.5l4 4 8-9"/></svg>',
 };
 
-const NAV = { cliente: [['/', 'Ofertas'], ['/reservas', 'Minhas reservas']], operador: [['/', 'Vagas'], ['/passeios', 'Passeios'], ['/validar', 'Validar código']], admin: [] };
+const NAV = { cliente: [['/', 'Ofertas'], ['/reservas', 'Minhas reservas'], ['/perfil', 'Meu perfil']], operador: [['/', 'Vagas'], ['/passeios', 'Passeios'], ['/validar', 'Validar código']], admin: [] };
 const nav = h => { const n = NAV[U.perfil]; return n.length ? `<nav class="nav" aria-label="Seções do painel">${n.map(([r, t]) => `<a href="#${r}" ${h === r || (r === '/reservas' && h.startsWith('/voucher')) || (r === '/' && h.startsWith('/oferta')) ? 'aria-current="page"' : ''}>${t}</a>`).join('')}</nav>` : ''; };
 // Monta a tela: faixa verde (título, explicação e abas) + conteúdo branco. Textos já devem vir escapados.
 const tela = (h, titulo, lead, html) => {
@@ -34,6 +34,11 @@ const tela = (h, titulo, lead, html) => {
   app.innerHTML = html; document.title = titulo.replace(/<[^>]*>/g, '') + ' · Viaje Mais';
 };
 const vazio = (t, d = '') => `<div class="vazio"><strong>${t}</strong>${d ? `<p>${d}</p>` : ''}</div>`;
+// Foto de perfil ou a inicial do nome. "v" muda a cada troca para o navegador não mostrar a foto antiga.
+let fotoV = Date.now();
+const avatar = cls => `<span class="${cls}">${U.temFoto ? `<img src="/api/perfil/foto?v=${fotoV}" alt="">` : esc((U.nome || '?').trim()[0].toUpperCase())}</span>`;
+const topo = () => { $('nome').textContent = U.nome; $('papel').textContent = PAPEL[U.perfil];
+  if (U.perfil === 'cliente') { $('eu').innerHTML = avatar('avatar'); $('eu').hidden = false; } };
 
 /* ---------- VIAJANTE ---------- */
 const vagasTxt = o => `${o.livres === 1 ? 'Resta 1 vaga' : `Restam ${o.livres} vagas`} de ${o.vagas}`;
@@ -62,7 +67,7 @@ async function vOferta(id) {
     <div class="sobre"><h2>Sobre o passeio</h2><p><span class="tag">${esc(o.categoria)}</span></p><p>${esc(o.descricao) || 'O operador ainda não escreveu uma descrição.'}</p></div></div>
     <form class="caixa" id="r"><h2>Reservar</h2>
     <div><label for="n">Seu nome</label><input id="n" value="${esc(U.nome)}" autocomplete="name" required></div>
-    <div><label for="t">Telefone com DDD</label><input id="t" type="tel" autocomplete="tel" placeholder="(55) 99999-9999" required></div>
+    <div><label for="t">Telefone com DDD</label><input id="t" type="tel" autocomplete="tel" placeholder="(55) 99999-9999" value="${esc(U.telefone || '')}" required></div>
     <div><label for="q">Pessoas</label><select id="q">${Array.from({ length: max }, (_, i) => `<option>${i + 1}</option>`).join('')}</select></div>
     <div class="total" id="tot"></div>
     <p class="aviso">O pagamento por Pix entra na próxima etapa. Por enquanto a reserva gera o código para usar no local.</p>
@@ -97,6 +102,61 @@ async function vVoucher(id) {
     <div class="msg" id="m" role="alert"></div>
     ${r.status === 'reservada' && !OFFLINE ? '<button class="btn sec" id="c">Cancelar reserva</button>' : ''}</div></article>`);
   const c = $('c'); if (c) c.onclick = async () => { if (!confirm('Cancelar esta reserva?')) return; try { await api(`/api/reservas/${r.id}/cancelar`, 'POST'); await carregarReservas(); vVoucher(id); } catch (x) { erro($('m'), x); } };
+}
+
+/* ---------- PERFIL DO VIAJANTE ---------- */
+// Corta a imagem no centro em 320x320 e salva como JPEG: a foto fica pequena (~30 KB) antes de ir para o servidor.
+const reduzir = f => new Promise((ok, falha) => {
+  const img = new Image();
+  img.onload = () => { const t = 320, c = document.createElement('canvas'), s = Math.min(img.width, img.height); c.width = c.height = t;
+    c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, t, t); URL.revokeObjectURL(img.src); ok(c.toDataURL('image/jpeg', .85)); };
+  img.onerror = () => falha(new Error('Não foi possível abrir essa imagem. Use JPG, PNG ou WebP.'));
+  img.src = URL.createObjectURL(f);
+});
+const msgOk = (el, t) => { el.textContent = t; el.className = 'msg ok'; };
+
+async function vPerfil() {
+  const l = await carregarReservas();
+  // Histórico: o que já aconteceu (usadas, canceladas ou com horário passado). As ativas ficam em "Minhas reservas".
+  const hist = l.filter(r => r.status !== 'reservada' || new Date(r.inicio) < Date.now());
+  const feitos = l.filter(r => r.status === 'usada').length;
+  const economia = l.filter(r => r.status !== 'cancelada' && r.desconto > 0 && r.desconto < 100).reduce((s, r) => s + (r.precoUnit / (1 - r.desconto / 100) - r.precoUnit) * r.pessoas, 0);
+  tela('/perfil', 'Meu perfil', 'Seus dados, sua senha e os passeios que você já fez.', `<div class="perfil">
+  <aside class="cartao-perfil">${avatar('avatar grande')}<h2>${esc(U.nome)}</h2><p class="meta">${esc(U.email)}</p>
+    <input id="foto" type="file" accept="image/jpeg,image/png,image/webp" class="sr"><label class="btn sec peq" for="foto">${U.temFoto ? 'Trocar foto' : 'Adicionar foto'}</label>
+    ${U.temFoto ? '<button class="link" id="sem-foto" type="button">Remover foto</button>' : ''}<div class="msg" id="mf" role="alert"></div>
+    <dl class="numeros"><div><dt>Passeios feitos</dt><dd>${feitos}</dd></div><div><dt>Economia com descontos</dt><dd>${brl(economia)}</dd></div></dl></aside>
+  <div class="perfil-secoes">
+    <section class="secao"><h2>Histórico</h2>${hist.length ? `<div class="lista">${hist.map(r => `<a href="#/voucher/${r.id}"><div class="principal"><strong>${esc(r.titulo)}</strong><p class="meta">${esc(r.cidade)}, ${quando(r.inicio)}</p></div><div class="fim"><span class="tag ${r.status}">${ST[r.status]}</span><div class="valor">${brl(r.total)}<small>${r.pessoas} pessoa(s)</small></div></div></a>`).join('')}</div>`
+      : vazio('Seu histórico aparece aqui depois do primeiro passeio.', l.length ? 'Suas reservas ativas estão em <a href="#/reservas">Minhas reservas</a>.' : 'Veja as <a href="#/">ofertas</a> e reserve uma vaga com desconto.')}</section>
+    <form class="caixa secao" id="fd"><h2>Dados pessoais</h2>
+      <div><label for="pn">Nome completo</label><input id="pn" value="${esc(U.nome)}" autocomplete="name" required></div>
+      <div><label for="pe">E-mail</label><input id="pe" value="${esc(U.email)}" disabled><p class="nota">O e-mail é o seu login e não pode ser trocado por aqui.</p></div>
+      <div><label for="pt">Telefone com DDD</label><input id="pt" type="tel" value="${esc(U.telefone || '')}" autocomplete="tel" placeholder="(55) 99999-9999"><p class="nota">Já vem preenchido quando você reservar.</p></div>
+      <div class="msg" id="md" role="alert"></div><button class="btn">Salvar dados</button></form>
+    <form class="caixa secao" id="fs"><h2>Trocar senha</h2>
+      <div><label for="sa">Senha atual</label><input id="sa" type="password" autocomplete="current-password" required></div>
+      <div><label for="sn">Nova senha</label><input id="sn" type="password" autocomplete="new-password" minlength="8" required><p class="nota">Pelo menos 8 caracteres. Você continua conectado aqui e sai dos outros aparelhos.</p></div>
+      <div><label for="sc">Repita a nova senha</label><input id="sc" type="password" autocomplete="new-password" required></div>
+      <div class="msg" id="ms" role="alert"></div><button class="btn">Trocar senha</button></form>
+    <form class="caixa secao zona-perigo" id="fx"><h2>Excluir conta</h2>
+      <p class="nota">Apaga sua conta, seus dados e sua foto. Os passeios que você já fez continuam no registro do operador, sem seu nome e telefone. Reservas ativas precisam ser canceladas antes. Não dá para desfazer.</p>
+      <div><label for="xs">Digite sua senha para confirmar</label><input id="xs" type="password" autocomplete="current-password" required></div>
+      <div class="msg" id="mx" role="alert"></div><button class="btn perigo">Excluir minha conta</button></form>
+  </div></div>`);
+
+  const salvarFoto = async foto => { try { const r = await api('/api/perfil/foto', 'POST', { foto }); U.temFoto = r.temFoto; fotoV = Date.now(); localStorage.setItem('vm_user', JSON.stringify(U)); topo(); vPerfil(); } catch (x) { erro($('mf'), x); } };
+  $('foto').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { salvarFoto(await reduzir(f)); } catch (x) { erro($('mf'), x); } };
+  const sf = $('sem-foto'); if (sf) sf.onclick = () => salvarFoto(null);
+  $('fd').onsubmit = async e => { e.preventDefault();
+    try { const r = await api('/api/perfil', 'POST', { nome: $('pn').value, telefone: $('pt').value }); Object.assign(U, { nome: r.nome, telefone: r.telefone }); localStorage.setItem('vm_user', JSON.stringify(U)); topo(); msgOk($('md'), 'Dados salvos.'); }
+    catch (x) { erro($('md'), x); } };
+  $('fs').onsubmit = async e => { e.preventDefault();
+    try { await api('/api/perfil/senha', 'POST', { atual: $('sa').value, nova: $('sn').value, confirmar: $('sc').value }); $('fs').reset(); msgOk($('ms'), 'Senha trocada.'); }
+    catch (x) { erro($('ms'), x); } };
+  $('fx').onsubmit = async e => { e.preventDefault(); if (!confirm('Excluir sua conta para sempre?')) return;
+    try { await api('/api/perfil', 'DELETE', { senha: $('xs').value }); localStorage.removeItem('vm_user'); localStorage.removeItem('vm_reservas'); location.href = '/'; }
+    catch (x) { erro($('mx'), x); } };
 }
 
 /* ---------- OPERADOR ---------- */
@@ -153,6 +213,7 @@ async function rota() {
     if (U.perfil === 'operador') return await ({ '': vVagas, passeios: vPasseios, validar: vValidar }[a || ''] || vVagas)();
     if (OFFLINE && !['reservas', 'voucher'].includes(a)) return location.hash = '#/reservas';
     if (a === 'oferta') return await vOferta(id); if (a === 'reservas') return await vReservas(); if (a === 'voucher') return await vVoucher(id);
+    if (a === 'perfil') return await vPerfil();
     await vOfertas();
   } catch (e) { tela(null, 'Não foi possível abrir esta tela', '', vazio(e instanceof TypeError ? 'Sem conexão com o servidor.' : esc(e.message), 'Confira a internet e tente de novo.')); }
 }
@@ -160,7 +221,7 @@ async function rota() {
   try { U = await api('/api/me'); localStorage.setItem('vm_user', JSON.stringify(U)); }
   catch (e) { if (e instanceof TypeError) { U = JSON.parse(localStorage.getItem('vm_user') || 'null'); OFFLINE = !!U; } }
   if (!U) { paraLogin(); return; }
-  $('nome').textContent = U.nome; $('papel').textContent = PAPEL[U.perfil];
+  topo();
   addEventListener('hashchange', rota); rota();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 })();
