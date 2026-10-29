@@ -1,8 +1,9 @@
-// Banco em arquivo (db.json). Na primeira execução cria os dados de demonstração.
+// Banco em arquivo: lê e grava banco-de-dados/db.json. Na primeira execução cria os dados de demonstração.
 const fs = require('fs'), path = require('path');
 const { hash } = require('./seguranca');
 
-const DB = path.join(__dirname, '..', 'db.json');
+const DB = path.join(__dirname, '..', 'banco-de-dados', 'db.json');
+fs.mkdirSync(path.dirname(DB), { recursive: true }); // garante a pasta, caso ela não exista nesta cópia do projeto
 let db;
 const save = () => fs.writeFileSync(DB, JSON.stringify(db, null, 1));
 

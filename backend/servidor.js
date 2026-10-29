@@ -1,12 +1,12 @@
-// Viaje Mais — servidor (Node 18+, sem dependências). Rodar: node server.js
-// Este arquivo só liga as peças. As regras ficam em src/ (veja o CLAUDE.md).
+// Viaje Mais — servidor (Node 18+, sem dependências). Rodar na raiz do projeto: node server.js
+// Este arquivo só liga as peças: entrega o frontend ou chama a rota da API. Mapa do backend: backend/README.md.
 const http = require('http');
-const { PORTA } = require('./src/config');
-const { send, lerCorpo, arquivo } = require('./src/http');
-const { lerSessao } = require('./src/sessoes');
+const { PORTA } = require('./config');
+const { send, lerCorpo, arquivo } = require('./http');
+const { lerSessao } = require('./sessoes');
 
 // Cada rota: { metodo, caminho, quem, fazer }. quem: vazio = público, 'logado' = qualquer conta, ou um perfil.
-const rotas = [...require('./src/rotas/conta'), ...require('./src/rotas/perfil'), ...require('./src/rotas/passeios'), ...require('./src/rotas/ofertas')]
+const rotas = [...require('./rotas/conta'), ...require('./rotas/perfil'), ...require('./rotas/passeios'), ...require('./rotas/ofertas')]
   .map(r => ({ ...r, re: new RegExp('^' + r.caminho.replace(':id', '(\\d+)') + '$') }));
 
 http.createServer(async (req, res) => {
