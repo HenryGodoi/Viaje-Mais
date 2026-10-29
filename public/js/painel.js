@@ -24,7 +24,7 @@ const ICONE = {
   ok: '<svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="16" r="13"/><path d="M10 16.5l4 4 8-9"/></svg>',
 };
 
-const NAV = { cliente: [['/', 'Ofertas'], ['/reservas', 'Minhas reservas'], ['/perfil', 'Meu perfil']], operador: [['/', 'Vagas'], ['/passeios', 'Passeios'], ['/validar', 'Validar código']], admin: [] };
+const NAV = { cliente: [['/', 'Ofertas'], ['/reservas', 'Minhas reservas']], operador: [['/', 'Vagas'], ['/passeios', 'Passeios'], ['/validar', 'Validar código']], admin: [] };
 const nav = h => { const n = NAV[U.perfil]; return n.length ? `<nav class="nav" aria-label="Seções do painel">${n.map(([r, t]) => `<a href="#${r}" ${h === r || (r === '/reservas' && h.startsWith('/voucher')) || (r === '/' && h.startsWith('/oferta')) ? 'aria-current="page"' : ''}>${t}</a>`).join('')}</nav>` : ''; };
 // Monta a tela: faixa verde (título, explicação e abas) + conteúdo branco. Textos já devem vir escapados.
 const tela = (h, titulo, lead, html) => {
@@ -121,14 +121,15 @@ async function vPerfil() {
   const hist = l.filter(r => r.status !== 'reservada' || new Date(r.inicio) < Date.now());
   const feitos = l.filter(r => r.status === 'usada').length;
   const economia = l.filter(r => r.status !== 'cancelada' && r.desconto > 0 && r.desconto < 100).reduce((s, r) => s + (r.precoUnit / (1 - r.desconto / 100) - r.precoUnit) * r.pessoas, 0);
-  tela('/perfil', 'Meu perfil', 'Seus dados, sua senha e os passeios que você já fez.', `<div class="perfil">
+  // O perfil é uma área à parte: sem as abas de ofertas e reservas. Chega-se a ele pela foto no topo ou pelo "Meu painel" da home.
+  tela(null, 'Meu perfil', 'Seus dados, sua senha e os passeios que você já fez.', `<div class="perfil">
   <aside class="cartao-perfil">${avatar('avatar grande')}<h2>${esc(U.nome)}</h2><p class="meta">${esc(U.email)}</p>
     <input id="foto" type="file" accept="image/jpeg,image/png,image/webp" class="sr"><label class="btn sec peq" for="foto">${U.temFoto ? 'Trocar foto' : 'Adicionar foto'}</label>
     ${U.temFoto ? '<button class="link" id="sem-foto" type="button">Remover foto</button>' : ''}<div class="msg" id="mf" role="alert"></div>
     <dl class="numeros"><div><dt>Passeios feitos</dt><dd>${feitos}</dd></div><div><dt>Economia com descontos</dt><dd>${brl(economia)}</dd></div></dl></aside>
   <div class="perfil-secoes">
     <section class="secao"><h2>Histórico</h2>${hist.length ? `<div class="lista">${hist.map(r => `<a href="#/voucher/${r.id}"><div class="principal"><strong>${esc(r.titulo)}</strong><p class="meta">${esc(r.cidade)}, ${quando(r.inicio)}</p></div><div class="fim"><span class="tag ${r.status}">${ST[r.status]}</span><div class="valor">${brl(r.total)}<small>${r.pessoas} pessoa(s)</small></div></div></a>`).join('')}</div>`
-      : vazio('Seu histórico aparece aqui depois do primeiro passeio.', l.length ? 'Suas reservas ativas estão em <a href="#/reservas">Minhas reservas</a>.' : 'Veja as <a href="#/">ofertas</a> e reserve uma vaga com desconto.')}</section>
+      : vazio('Seu histórico aparece aqui depois do primeiro passeio.')}</section>
     <form class="caixa secao" id="fd"><h2>Dados pessoais</h2>
       <div><label for="pn">Nome completo</label><input id="pn" value="${esc(U.nome)}" autocomplete="name" required></div>
       <div><label for="pe">E-mail</label><input id="pe" value="${esc(U.email)}" disabled><p class="nota">O e-mail é o seu login e não pode ser trocado por aqui.</p></div>
