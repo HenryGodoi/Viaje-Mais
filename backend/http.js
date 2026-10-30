@@ -6,6 +6,22 @@ const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=
 
 const send = (r, c, o) => { r.writeHead(c, { 'Content-Type': 'application/json' }); r.end(JSON.stringify(o)); };
 
+// Pedido que chegou por HTTPS através de um túnel como o ngrok (ele avisa por este cabeçalho).
+const viaHttps = req => req.headers['x-forwarded-proto'] === 'https';
+// Cabeçalhos de segurança em toda resposta. A CSP só deixa carregar o que é do próprio site e as fontes do Google.
+// 'unsafe-inline' em style-src porque as telas usam style="..."; data: em img-src por causa do QR do voucher.
+// Se o frontend passar a usar outro site (CDN, mapa, Pix), ele precisa entrar aqui.
+const SEGURANCA = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'same-origin',
+  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+};
+const comSeguranca = (req, res) => {
+  for (const [k, v] of Object.entries(SEGURANCA)) res.setHeader(k, v);
+  if (viaHttps(req)) res.setHeader('Strict-Transport-Security', 'max-age=15552000'); // 180 dias: só HTTPS daqui pra frente
+};
+
 // Corpo do pedido em JSON. Acima de 400 KB (contados em bytes) dá erro 413;
 // a foto de perfil, já reduzida no navegador, fica bem abaixo disso.
 const LIMITE = 400 * 1024;
@@ -27,4 +43,4 @@ const arquivo = (p, res) => {
   fs.createReadStream(f).pipe(res);
 };
 
-module.exports = { send, lerCorpo, arquivo };
+module.exports = { send, lerCorpo, arquivo, viaHttps, comSeguranca };

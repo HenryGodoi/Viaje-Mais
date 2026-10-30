@@ -37,9 +37,11 @@ Na primeira execução o servidor cria o arquivo `banco-de-dados/db.json` com da
 
 | Perfil | E-mail | Senha |
 |---|---|---|
-| Administrador | `admin@viajemais.com` | `admin1234` |
-| Operador de turismo | `operador@viajemais.com` | `operador1234` |
+| Administrador | `admin@viajemais.com` | sorteada no primeiro uso e mostrada no terminal |
+| Operador de turismo | `operador@viajemais.com` | sorteada no primeiro uso e mostrada no terminal |
 | Viajante | crie pela tela "Criar conta" | |
+
+Anote as senhas quando o servidor criar o banco: elas não aparecem de novo. Para trocar a senha de qualquer conta, com o servidor desligado: `node backend/trocar-senha.js <e-mail> <nova senha>`.
 
 O operador de teste já tem o passeio aprovado "Rota dos fósseis".
 
