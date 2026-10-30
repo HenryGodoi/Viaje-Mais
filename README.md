@@ -3,7 +3,7 @@
 PWA de turismo para a **Quarta Colônia (RS)**. Mostra as vagas que sobraram em passeios, museus, vinícolas e trilhas, com desconto: quanto mais vazio o horário, maior o desconto. O turista reserva pelo celular e recebe um código para usar no local, mesmo sem internet.
 
 Projeto campeão do **Ideathon 2026**. Próxima etapa: Startcup.
-Equipe: Henry Azambuja Godoi (desenvolvimento), Enzo Ueno e Samuel Fritz.
+Equipe do StartCUP: Henry Azambuja Godoi (desenvolvimento), Enzo Massao, Samuel Fritz, Richard Matge e Professora Vônia Engel.
 
 ## Onde está cada coisa
 
