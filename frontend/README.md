@@ -15,6 +15,7 @@ Cada arquivo desta pasta é um endereço do site: o backend entrega `frontend/js
 | `js/home.js` | Busca, quadro de saídas e "Meu painel" na página inicial |
 | `js/entrar.js` | Login, cadastro e a volta para a tela de onde a pessoa veio |
 | `js/painel.js` | Todas as telas do painel |
+| `js/qrcode.js` | Gerador de QR code do voucher, copiado sem mudanças do `qrcode-generator` 2.0.4 (licença MIT). Desenha o QR no próprio aparelho, sem internet |
 | `sw.js` | Service worker: guarda as telas para abrir sem internet. Fica na raiz da pasta para valer no site todo |
 | `manifest.webmanifest`, `icon-192.png`, `icon-512.png` | Nome e ícones para instalar como aplicativo |
 
@@ -23,4 +24,4 @@ Cada arquivo desta pasta é um endereço do site: o backend entrega `frontend/js
 - O frontend só conversa com o backend pelos endereços `/api/...`.
 - Texto da API colocado dentro de HTML (template string) passa por `esc()`. Com `textContent` não precisa, porque ele já mostra o texto como texto.
 - As cores e fontes ficam só em `css/base.css`. Nos outros arquivos, use `var(--nome)`.
-- Mudou um arquivo daqui? Aumente a versão do cache no `sw.js` (`vm-v9`, `vm-v10`…). Arquivo novo que precisa abrir sem internet entra na lista `SHELL` do `sw.js`.
+- Mudou um arquivo daqui? Aumente a versão do cache no `sw.js` (`vm-v10`, `vm-v11`…). Arquivo novo que precisa abrir sem internet entra na lista `SHELL` do `sw.js`.
