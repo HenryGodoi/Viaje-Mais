@@ -2,7 +2,7 @@
 // Este arquivo só liga as peças: entrega o frontend ou chama a rota da API. Mapa do backend: backend/README.md.
 const http = require('http');
 const { PORTA } = require('./config');
-const { send, lerCorpo, arquivo } = require('./http');
+const { send, lerCorpo, arquivo, comSeguranca } = require('./http');
 const { lerSessao } = require('./sessoes');
 
 // Cada rota: { metodo, caminho, quem, fazer }. quem: vazio = público, 'logado' = qualquer conta, ou um perfil.
@@ -13,6 +13,7 @@ http.createServer(async (req, res) => {
   // Tudo dentro do try, inclusive a leitura do corpo: um erro num pedido (ou um envio cortado no meio,
   // como o de um celular que perde o sinal) nunca pode derrubar o servidor para todo mundo.
   try {
+    comSeguranca(req, res);
     const p = new URL(req.url, 'http://x').pathname, m = req.method;
     if (!p.startsWith('/api/')) return arquivo(p, res);
 

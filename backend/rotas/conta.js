@@ -5,6 +5,20 @@ const { entrar, sair } = require('../sessoes');
 const { pub } = require('../regras');
 const { send } = require('../http');
 
+// Limite de tentativas: 5 senhas erradas para o mesmo e-mail, vindas do mesmo endereço, travam o login
+// desse e-mail por 15 minutos. Fica na memória (reiniciar o servidor zera a contagem).
+const MAX_ERROS = 5, JANELA = 15 * 60e3, erros = new Map(); // "endereço e-mail" -> { n, desde }
+const tentativas = chave => {
+  const e = erros.get(chave);
+  if (e && Date.now() - e.desde > JANELA) { erros.delete(chave); return null; }
+  return e;
+};
+const errou = chave => {
+  const e = tentativas(chave) || { n: 0, desde: Date.now() }; e.n++; erros.set(chave, e);
+  // shortcut: limpeza só quando a lista passa de 10 mil chaves; com muito tráfego, trocar por limpeza periódica
+  if (erros.size > 10000) for (const [k, v] of erros) if (Date.now() - v.desde > JANELA) erros.delete(k);
+};
+
 module.exports = [
   { metodo: 'POST', caminho: '/api/cadastro', fazer: ({ res, b }) => {
     const email = String(b.email || '').trim().toLowerCase();
@@ -20,9 +34,13 @@ module.exports = [
     send(res, 201, { ok: true, aviso: 'Cadastro enviado. O administrador precisa aprovar seu perfil antes do primeiro acesso.' });
   } },
 
-  { metodo: 'POST', caminho: '/api/login', fazer: ({ res, b }) => {
-    const u = db.users.find(x => x.email === String(b.email || '').trim().toLowerCase());
-    if (!u || !check(String(b.senha || ''), u.senha)) return send(res, 401, { erro: 'E-mail ou senha incorretos.' });
+  { metodo: 'POST', caminho: '/api/login', fazer: ({ req, res, b }) => {
+    const email = String(b.email || '').trim().toLowerCase(), chave = req.socket.remoteAddress + ' ' + email;
+    const t = tentativas(chave);
+    if (t && t.n >= MAX_ERROS) return send(res, 429, { erro: `Muitas tentativas com senha errada. Tente de novo em ${Math.ceil((t.desde + JANELA - Date.now()) / 60e3)} minuto(s).` });
+    const u = db.users.find(x => x.email === email);
+    if (!u || !check(String(b.senha || ''), u.senha)) { errou(chave); return send(res, 401, { erro: 'E-mail ou senha incorretos.' }); }
+    erros.delete(chave);
     if (u.status !== 'ativo') return send(res, 403, { erro: 'Seu cadastro ainda aguarda aprovação do administrador.' });
     entrar(res, u); send(res, 200, { ok: true, usuario: pub(u) });
   } },
