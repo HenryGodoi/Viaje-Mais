@@ -20,15 +20,17 @@ const erro = (el, e) => { el.textContent = e.message; el.className = 'msg erro';
 // Sem isso, um clique duplo reservava ou publicava duas vezes, ou trocava a senha e mostrava erro.
 const aoEnviar = (form, acao) => form.onsubmit = async e => {
   e.preventDefault(); const botao = form.querySelector('button');
-  if (botao.disabled) return; botao.disabled = true;
-  try { await acao(); } finally { botao.disabled = false; }
+  if (botao.disabled) return; botao.disabled = true; botao.classList.add('carregando');
+  try { await acao(); } finally { botao.disabled = false; botao.classList.remove('carregando'); }
 };
+const CARREGANDO = '<p class="carregando-tela" role="status"><span class="spinner" aria-hidden="true"></span>Carregando…</p>';
 $('sair').onclick = async () => { try { await api('/api/logout', 'POST'); } catch {} localStorage.removeItem('vm_user'); localStorage.removeItem('vm_reservas'); location.href = '/'; };
 
 const ICONE = {
   relogio: '<svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><circle cx="16" cy="16" r="12"/><path d="M16 9v7l5 3"/></svg>',
   voltar: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>',
   ok: '<svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="16" r="13"/><path d="M10 16.5l4 4 8-9"/></svg>',
+  logo: '<svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="16" cy="16" r="12"/><path d="M16 8v8l5 3"/></svg>',
 };
 
 const NAV = { cliente: [['/', 'Ofertas'], ['/reservas', 'Minhas reservas']], operador: [['/', 'Vagas'], ['/passeios', 'Passeios'], ['/validar', 'Validar código']], admin: [] };
@@ -96,18 +98,34 @@ async function vReservas() {
     (l.length ? `<div class="lista">${l.map(r => `<a href="#/voucher/${r.id}"><div class="principal"><strong>${esc(r.titulo)}</strong><p class="meta">${esc(r.cidade)}, ${quando(r.inicio)}</p></div><div class="fim"><span class="tag ${r.status}">${ST[r.status]}</span><div class="valor">${brl(r.total)}<small>${r.pessoas} pessoa(s)</small></div></div></a>`).join('')}</div>`
       : vazio('Você ainda não fez reservas.', 'Veja as <a href="#/">ofertas</a> e reserve uma vaga com desconto.')));
 }
+// QR code com só o código da reserva, desenhado aqui mesmo (js/qrcode.js): funciona sem internet.
+const qrSvg = t => { const q = qrcode(0, 'M'); q.addData(t); q.make(); return q.createSvgTag({ cellSize: 4, scalable: true }); };
+// Cartão que inclina seguindo o mouse ou o dedo, até 10° para cada lado, e cresce 5% (como o TiltCard da Spell UI).
+const inclinar = el => {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  el.onpointermove = e => { const b = el.getBoundingClientRect(), x = (e.clientX - b.left) / b.width - .5, y = (e.clientY - b.top) / b.height - .5;
+    el.style.transform = `rotateX(${(-y * 20).toFixed(1)}deg) rotateY(${(x * 20).toFixed(1)}deg) scale(1.05)`; };
+  el.onpointerleave = el.onpointercancel = () => el.style.transform = '';
+};
 async function vVoucher(id) {
   const r = (await carregarReservas()).find(x => x.id === +id);
   if (!r) { location.hash = '#/reservas'; return; }
-  tela('/voucher', 'Seu voucher', 'Mostre este código no local. Ele fica salvo neste aparelho e funciona sem internet.',
+  const qr = qrSvg(r.codigo), ativa = r.status === 'reservada';
+  tela('/voucher', 'Seu voucher', 'Mostre o QR code ou o código no local. Ele fica salvo neste aparelho e funciona sem internet.',
     `<a class="voltar" href="#/reservas">${ICONE.voltar}Minhas reservas</a>
-    <article class="ingresso ${r.status}"><header><span class="tag ${r.status}">${ST[r.status]}</span><h2>${esc(r.titulo)}</h2><p>${esc(r.cidade)}, ${quando(r.inicio)}</p></header>
-    <div class="corte" aria-hidden="true"></div>
-    <div class="ing-corpo"><p class="rotulo" id="rot">Código da reserva</p><div class="codigo" aria-labelledby="rot">${esc(r.codigo)}</div>
-    <dl><div><dt>Pessoas</dt><dd>${r.pessoas}</dd></div><div><dt>Em nome de</dt><dd>${esc(r.nome)}</dd></div><div><dt>Total</dt><dd>${brl(r.total)}</dd></div></dl>
-    <p class="meta">Preço com ${r.desconto}% de desconto, travado no momento da reserva.</p>
+    <div class="palco"><article class="voucher ${r.status}" id="vc">
+      <div class="v-topo"><span class="v-marca">${ICONE.logo}Viaje Mais</span><span class="tag ${r.status}">${ST[r.status]}</span></div>
+      <div class="v-info"><h2>${esc(r.titulo)}</h2><p>${esc(r.cidade)}, ${quando(r.inicio)}</p></div>
+      <div class="v-qr"><button type="button" id="ampliar" aria-label="Ampliar o QR code">${qr}</button><small id="rot">Código da reserva</small><div class="codigo" aria-labelledby="rot">${esc(r.codigo)}</div></div>
+      <dl class="v-dados"><div><dt>Em nome de</dt><dd>${esc(r.nome)}</dd></div><div><dt>Pessoas</dt><dd>${r.pessoas}</dd></div><div><dt>Total</dt><dd>${brl(r.total)}</dd></div></dl>
+    </article></div>
+    <dialog class="qr-grande" id="dq" aria-label="QR code da reserva">${qr}<div class="codigo">${esc(r.codigo)}</div><form method="dialog"><button class="btn">Fechar</button></form></dialog>
+    <p class="meta">Preço com ${r.desconto}% de desconto, travado no momento da reserva. Toque no QR code para ampliar.</p>
     <div class="msg" id="m" role="alert"></div>
-    ${r.status === 'reservada' && !OFFLINE ? '<button class="btn sec" id="c">Cancelar reserva</button>' : ''}</div></article>`);
+    ${ativa && !OFFLINE ? '<button class="btn sec" id="c">Cancelar reserva</button>' : ''}`);
+  // Reserva usada ou cancelada fica cinza e parada.
+  if (ativa) inclinar($('vc'));
+  $('ampliar').onclick = () => $('dq').showModal();
   const c = $('c'); if (c) c.onclick = async () => { if (!confirm('Cancelar esta reserva?')) return; try { await api(`/api/reservas/${r.id}/cancelar`, 'POST'); await carregarReservas(); vVoucher(id); } catch (x) { erro($('m'), x); } };
 }
 
@@ -192,12 +210,38 @@ async function vPasseios() {
   app.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { try { await api('/api/operador/passeios/' + b.dataset.del, 'DELETE'); vPasseios(); } catch (x) { alert(x.message); } });
 }
 function vValidar() {
-  tela('/validar', 'Validar código', 'Digite o código que o turista mostrar no local. Cada código vale uma vez.',
-    `<div class="duas"><form class="caixa" id="v"><div><label for="c">Código da reserva</label><input id="c" class="codigo-input" autocomplete="off" autocapitalize="characters" required></div><div class="msg" id="m" role="alert"></div><button class="btn">Validar</button></form><div id="res" aria-live="polite"></div></div>`);
+  tela('/validar', 'Validar código', 'Leia o QR code ou digite o código que o turista mostrar no local. Cada código vale uma vez.',
+    `<div class="duas"><form class="caixa" id="v"><div><label for="c">Código da reserva</label><input id="c" class="codigo-input" autocomplete="off" autocapitalize="characters" required></div><div class="msg" id="m" role="alert"></div><button class="btn">Validar</button>
+    <button class="btn sec" type="button" id="ler" hidden>Ler QR code</button><video id="cam" class="camera" playsinline muted hidden></video></form><div id="res" aria-live="polite"></div></div>`);
   aoEnviar($('v'), async () => { $('m').textContent = ''; $('res').innerHTML = '';
     try { const r = await api('/api/operador/validar', 'POST', { codigo: $('c').value });
       $('res').innerHTML = `<div class="resultado">${ICONE.ok}<div><strong>Código válido</strong><p>${r.pessoas} pessoa(s) em nome de <b>${esc(r.nome)}</b></p><p class="meta">${esc(r.titulo)}, ${quando(r.inicio)}</p></div></div>`; $('c').value = ''; }
     catch (x) { erro($('m'), x); } });
+  lerQr();
+}
+// Lê o QR do voucher com a câmera de trás. O BarcodeDetector existe no Chrome do Android, mas não no iPhone
+// nem no Chrome do Windows: lá o botão nem aparece e o operador digita o código.
+function lerQr() {
+  const ler = $('ler'), cam = $('cam'); let fluxo = null;
+  if (!('BarcodeDetector' in window)) return;
+  BarcodeDetector.getSupportedFormats().then(f => { if (f.includes('qr_code')) ler.hidden = false; });
+  const parar = () => { if (fluxo) fluxo.getTracks().forEach(t => t.stop()); fluxo = null; cam.hidden = true; ler.textContent = 'Ler QR code'; };
+  ler.onclick = async () => {
+    if (fluxo) return parar();
+    $('m').textContent = '';
+    try { fluxo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); }
+    catch { return erro($('m'), new Error('Não foi possível abrir a câmera. Libere a câmera para este site ou digite o código.')); }
+    cam.srcObject = fluxo; cam.hidden = false; ler.textContent = 'Fechar câmera'; cam.play().catch(() => {}); // sem await: enquanto a imagem não chega, detect() só falha e tenta de novo
+    const detector = new BarcodeDetector({ formats: ['qr_code'] });
+    const procurar = async () => {
+      if (!fluxo) return;
+      if (!cam.isConnected) return parar(); // saiu da tela: desliga a câmera
+      const [qr] = await detector.detect(cam).catch(() => []);
+      // Achou: preenche o campo e valida pelo mesmo caminho do botão "Validar" (aoEnviar).
+      if (qr) { parar(); $('c').value = qr.rawValue.trim(); $('v').requestSubmit(); } else setTimeout(procurar, 250);
+    };
+    procurar();
+  };
 }
 
 /* ---------- ADMIN ---------- */
@@ -216,6 +260,8 @@ async function rota() {
   // A home manda a busca no endereço: #/?busca=Nova%20Palma
   const [h, qs] = (location.hash.slice(1) || '/').split('?'), [, a, id] = h.split('/');
   if (qs) F.q = new URLSearchParams(qs).get('busca') || '';
+  // Só mostra o spinner se a tela demorar: com a internet rápida ele nem chega a piscar.
+  const espera = setTimeout(() => app.innerHTML = CARREGANDO, 250);
   try {
     if (U.perfil === 'admin') return await vAdmin();
     if (U.perfil === 'operador') return await ({ '': vVagas, passeios: vPasseios, validar: vValidar }[a || ''] || vVagas)();
@@ -224,6 +270,7 @@ async function rota() {
     if (a === 'perfil') return await vPerfil();
     await vOfertas();
   } catch (e) { tela(null, 'Não foi possível abrir esta tela', '', vazio(e instanceof TypeError ? 'Sem conexão com o servidor.' : esc(e.message), 'Confira a internet e tente de novo.')); }
+  finally { clearTimeout(espera); }
 }
 (async () => {
   try { U = await api('/api/me'); localStorage.setItem('vm_user', JSON.stringify(U)); }

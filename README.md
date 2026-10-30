@@ -47,7 +47,7 @@ O operador de teste já tem o passeio aprovado "Rota dos fósseis".
 
 1. Entre como **operador**, abra a aba Vagas e publique uma oferta (data futura, número de vagas, desconto máximo).
 2. Em outra janela anônima, entre como **viajante**: veja a oferta, reserve e receba o código.
-3. Volte ao operador, abra **Validar código** e digite o código. Usar o mesmo código de novo é recusado.
+3. Volte ao operador, abra **Validar código** e digite o código (no Chrome do Android, dá para ler o QR code com a câmera). Usar o mesmo código de novo é recusado.
 
 Dois perfis ao mesmo tempo precisam de navegadores ou janelas anônimas separadas: o login vale para todas as abas do mesmo navegador.
 
@@ -56,9 +56,9 @@ Dois perfis ao mesmo tempo precisam de navegadores ou janelas anônimas separada
 - **Página inicial** com o quadro "Próximas saídas": as próximas vagas reais aparecem mesmo sem login. A busca e cada saída levam ao login e, depois dele, direto para as ofertas filtradas ou para a oferta escolhida.
 - **Desconto dinâmico:** `desconto = descontoMax × vagas livres ÷ vagas`. Faltando 2 horas ou menos, vai ao desconto máximo e aparece o selo "Última hora".
 - **Reserva** de 1 a 10 pessoas, com nome e telefone. O preço fica travado no momento da reserva. Se as vagas acabarem durante a reserva, o app avisa.
-- **Voucher** com código de 8 caracteres, salvo no aparelho para abrir sem internet.
+- **Voucher** em forma de cartão que inclina, com QR code e o código de 8 caracteres embaixo, salvo no aparelho para abrir sem internet.
 - **Cancelamento** pelo viajante até 3 horas antes, com as vagas devolvidas à oferta.
-- **Validação do código** pelo operador no local, uma única vez.
+- **Validação do código** pelo operador no local, uma única vez: digitando ou lendo o QR com a câmera (Chrome do Android).
 - **Perfil do viajante:** foto, nome e telefone, troca de senha, exclusão da conta, histórico de reservas e quanto já economizou com os descontos.
 - **Três perfis:** viajante (ofertas, reservas, voucher), operador (passeios, vagas, validação) e administrador (aprova operadores e passeios).
 - **Segurança:** senhas com scrypt e sal aleatório, sessão em cookie HttpOnly, validação de tudo no servidor e texto escapado na tela.
@@ -74,7 +74,7 @@ frontend/                  o que o navegador baixa (cada arquivo é um endereço
   entrar.html              login e cadastro
   painel.html              área logada (viajante, operador, administrador)
   css/                     base.css (cores e fontes), home.css, app.css
-  js/                      home.js, entrar.js, painel.js
+  js/                      home.js, entrar.js, painel.js, qrcode.js (gerador de QR, MIT)
   sw.js                    service worker (cache offline)
 backend/                   o servidor
   servidor.js              entrega o frontend ou chama a rota da API
@@ -88,7 +88,7 @@ backend/                   o servidor
 banco-de-dados/            db.json (fora do GitHub) e a explicação da estrutura dos dados
 ```
 
-Sem dependências: o servidor usa só módulos nativos do Node.js e os dados ficam num arquivo JSON. As rotas da API estão nos arquivos de `backend/rotas/`.
+Sem dependências: o servidor usa só módulos nativos do Node.js e os dados ficam num arquivo JSON. O único código de terceiros é o `frontend/js/qrcode.js`, copiado sem npm. As rotas da API estão nos arquivos de `backend/rotas/`.
 
 ## Testar no celular
 
@@ -104,7 +104,8 @@ Depois de atualizar o código, aperte **Ctrl + Shift + R** no navegador para nã
 
 ## Ainda não feito
 
-- Pagamento por Pix e QR code no voucher (hoje a reserva gera só o código).
+- Pagamento por Pix (hoje a reserva gera o QR code e o código para usar no local).
+- Ler o QR code no iPhone (hoje o operador digita o código).
 - Entrar com Google (o botão existe, mas falta configurar o Client ID).
 - Páginas por cidade e por roteiro.
 - Newsletter, avaliações, avisos de última hora por notificação ou WhatsApp, pacotes passeio + jantar e painel de comissão.

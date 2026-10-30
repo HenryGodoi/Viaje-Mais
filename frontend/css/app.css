@@ -31,8 +31,25 @@ input:focus,textarea:focus,select:focus{border-color:var(--medio);outline:0}
 .perfis label{margin:0;border:2px solid var(--suave);border-radius:10px;padding:12px;font-weight:600;cursor:pointer;display:flex;gap:8px;align-items:center}
 .perfis input{width:auto}.perfis label:has(input:checked){border-color:var(--medio);background:var(--claro)}
 .hidden{display:none!important}
+/* campo com rótulo flutuante: o rótulo fica dentro do campo e sobe quando a pessoa clica ou digita.
+   O placeholder=" " no HTML é o que permite saber se o campo está vazio (:placeholder-shown). */
+.campo{position:relative}
+.campo input{padding:25px 16px 7px}
+.campo label{position:absolute;left:18px;top:17px;margin:0;font-weight:600;color:var(--muted);pointer-events:none;transform-origin:left top}
+.campo input:not(:placeholder-shown)+label{transform:translateY(-10px) scale(.8);font-weight:700}
+.campo input:focus+label{transform:translateY(-10px) scale(.8);font-weight:700;color:var(--medio)}
+.campo input:autofill+label{transform:translateY(-10px) scale(.8);font-weight:700}
+.campo input:focus{box-shadow:0 0 0 4px color-mix(in srgb,var(--medio) 22%,transparent)}
+/* spinner: círculo girando enquanto algo carrega. No botão, aparece com a classe .carregando (ver aoEnviar). */
+.spinner,.btn.carregando::before{content:"";display:inline-block;width:1.1em;height:1.1em;border:3px solid currentColor;border-right-color:transparent;border-radius:50%;animation:girar .7s linear infinite;flex:none}
+.btn.carregando{display:inline-flex;align-items:center;justify-content:center;gap:10px}
+@keyframes girar{to{transform:rotate(360deg)}}
+.carregando-tela{display:flex;align-items:center;gap:12px;color:var(--muted);font-weight:700;margin:0}
+.carregando-tela .spinner{color:var(--medio);width:26px;height:26px}
 @media(max-width:860px){.auth{grid-template-columns:1fr}.lado{padding:32px 24px;gap:20px;border-radius:0 0 28px 28px}.lado p,.lado .regiao{display:none}}
-@media(prefers-reduced-motion:no-preference){.btn{transition:transform .12s}.btn:active{transform:scale(.98)}}
+@media(prefers-reduced-motion:no-preference){.btn{transition:transform .12s}.btn:active{transform:scale(.98)}
+  .campo label{transition:transform .15s,color .15s}.campo input{transition:box-shadow .15s,border-color .15s}}
+@media(prefers-reduced-motion:reduce){.spinner,.btn.carregando::before{animation-duration:1.8s}}
 
 /* ---------- painel (v5): mesma identidade da home ---------- */
 .app{line-height:1.5}
@@ -124,19 +141,30 @@ input:focus,textarea:focus,select:focus{border-color:var(--medio);outline:0}
 .acoes{display:flex;gap:8px}
 .secao{margin-bottom:44px}
 
-/* voucher em forma de ingresso */
-.ingresso{max-width:480px;border-radius:20px;overflow:hidden;border:1px solid var(--suave);box-shadow:0 10px 30px rgba(14,59,43,.12)}
-.ingresso header{background:var(--escuro);color:var(--branco);padding:24px 26px 28px}
-.ingresso header h2{font-size:28px;margin:12px 0 6px}
-.ingresso header p{margin:0;color:var(--suave)}
-.corte{height:24px;background:radial-gradient(circle at 0 50%,var(--branco) 11px,transparent 12px),radial-gradient(circle at 100% 50%,var(--branco) 11px,transparent 12px),linear-gradient(var(--escuro) 50%,var(--branco) 50%);position:relative}
-.corte::after{content:"";position:absolute;left:22px;right:22px;top:50%;border-top:2px dashed var(--suave)}
-.ing-corpo{padding:12px 26px 26px;display:grid;gap:14px}
-.rotulo{margin:0;font-weight:700;color:var(--muted)}
-.codigo{font:800 40px/1.1 ui-monospace,Consolas,monospace;letter-spacing:.14em;text-align:center;background:var(--claro);border-radius:12px;padding:18px 8px;color:var(--escuro)}
-.ingresso dl{margin:0;display:grid;grid-template-columns:repeat(3,auto);gap:12px;justify-content:space-between}
-.ingresso dt{font-size:14px;color:var(--muted);font-weight:600}.ingresso dd{margin:0;font-weight:800}
-.ingresso.usada,.ingresso.cancelada{filter:grayscale(.9);opacity:.75}
+/* voucher: cartão que inclina com o mouse ou o dedo (como o TiltCard da Spell UI), com o QR code e o código embaixo.
+   A inclinação é feita pela função inclinar() em painel.js; o "palco" dá a profundidade (perspective). */
+.palco{perspective:1200px;max-width:600px;margin-bottom:22px}
+.voucher{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"topo topo" "info qr" "dados qr";gap:18px 24px;padding:24px;border-radius:22px;color:var(--branco);
+  background:linear-gradient(135deg,var(--escuro) 35%,var(--medio) 140%);transition:transform .15s ease-out;
+  box-shadow:0 8px 16px color-mix(in srgb,var(--escuro) 14%,transparent),0 16px 32px color-mix(in srgb,var(--escuro) 10%,transparent),0 24px 48px color-mix(in srgb,var(--escuro) 6%,transparent)}
+.v-topo{grid-area:topo;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.v-marca{display:flex;align-items:center;gap:8px;font:700 20px var(--fonte-titulo);color:var(--lima)}
+.v-info{grid-area:info}
+.v-info h2{font-size:26px;line-height:1.15;margin:0 0 6px;overflow-wrap:anywhere}
+.v-info p{margin:0;color:var(--suave)}
+.v-dados{grid-area:dados;align-self:end;margin:0;display:flex;flex-wrap:wrap;gap:10px 24px}
+.v-dados dt{font-size:13px;color:var(--suave);font-weight:600}.v-dados dd{margin:0;font-weight:800;overflow-wrap:anywhere}
+.v-qr{grid-area:qr;width:190px;background:var(--branco);color:var(--escuro);border-radius:16px;padding:8px 8px 12px;display:grid;gap:4px;text-align:center}
+.v-qr button{border:0;background:none;padding:0;border-radius:10px;cursor:zoom-in}
+.v-qr svg,.qr-grande svg{display:block;width:100%;height:auto}
+.v-qr small{font-size:12px;font-weight:700;color:var(--muted)}
+.codigo{font:800 24px/1.1 ui-monospace,Consolas,monospace;letter-spacing:.12em;color:var(--escuro)}
+.voucher.usada,.voucher.cancelada{filter:grayscale(.9);opacity:.75}
+/* QR em tela cheia, para o vendedor ler com facilidade */
+.qr-grande{border:0;border-radius:20px;padding:20px;width:min(92vw,420px);text-align:center;display:grid;gap:14px}
+.qr-grande:not([open]){display:none}
+.qr-grande::backdrop{background:color-mix(in srgb,var(--escuro) 75%,transparent)}
+.qr-grande .codigo{font-size:34px}
 
 /* perfil do viajante */
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -164,6 +192,7 @@ input:disabled{background:var(--claro);color:var(--muted)}
 .resultado svg{flex:none;color:var(--medio)}
 .resultado strong{display:block;font:700 20px var(--fonte-titulo);color:var(--escuro)}
 .resultado p{margin:4px 0 0}
+.camera{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;background:var(--ink)}
 .codigo-input{font:700 24px ui-monospace,Consolas,monospace!important;letter-spacing:.1em;text-transform:uppercase}
 
 @media(max-width:860px){
@@ -178,10 +207,10 @@ input:disabled{background:var(--claro);color:var(--muted)}
   .det,.duas,.perfil{grid-template-columns:1fr;gap:28px}
   .cartao-perfil{position:static}
   .det .caixa{position:static}
-  .codigo{font-size:30px}
-  .ingresso dl{grid-template-columns:1fr 1fr}
   .lista>li,.lista>a{grid-template-columns:1fr}
   .fim{justify-content:flex-start}
 }
+/* celular: o QR vai para o meio do cartão, grande */
+@media(max-width:600px){.voucher{grid-template-columns:1fr;grid-template-areas:"topo" "info" "qr" "dados";padding:20px}.v-qr{width:min(100%,260px);justify-self:center}}
 @media(max-width:420px){.app .papel{display:none}.app .brand{white-space:nowrap}.nav{gap:0;scrollbar-width:none}.nav a{padding:10px;font-size:14px}}
 .lista .meta{overflow-wrap:anywhere}
