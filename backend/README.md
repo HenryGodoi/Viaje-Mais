@@ -19,7 +19,8 @@ O servidor do Viaje Mais, em Node.js puro: só usa módulos que já vêm com o N
 | `sessoes.js` | Login por cookie, guardado em memória (reiniciar o servidor desloga todos) |
 | `seguranca.js` | Hash das senhas (scrypt) e código do voucher |
 | `banco.js` | Lê e grava `banco-de-dados/db.json` |
-| `dados-demonstracao.js` | Contas de teste e passeio criados no primeiro uso |
+| `dados-demonstracao.js` | Contas de teste e passeio criados no primeiro uso (senhas sorteadas, mostradas no terminal) |
+| `trocar-senha.js` | Troca a senha de uma conta: `node backend/trocar-senha.js <e-mail> <nova senha>`, com o servidor desligado |
 | `regras.js` | Desconto dinâmico e formato dos dados que vão para a tela |
 | `rotas/conta.js` | Cadastro, login, logout e quem está logado |
 | `rotas/perfil.js` | Perfil do viajante: dados, foto, senha e excluir conta |
@@ -37,3 +38,10 @@ Coloque um objeto na lista do arquivo certo em `rotas/`:
 - `quem`: vazio = rota pública; `'logado'` = qualquer conta; `'cliente'` (viajante), `'operador'` ou `'admin'` = só esse perfil. O servidor já responde 401 ou 403.
 - `b` é o corpo do pedido em JSON (sempre um objeto), `me` é quem está logado e `id` é o número do `:id`.
 - Valide tudo aqui no servidor: o que vem do navegador não é confiável.
+
+## Segurança
+
+- **Cabeçalhos em toda resposta** (`http.js`): `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` e uma Content-Security-Policy que só deixa carregar o que é do próprio site e as fontes do Google. Se o frontend passar a usar outro site (CDN, mapa, Pix), ele precisa entrar na CSP, senão o navegador bloqueia.
+- **Pelo HTTPS** (ngrok): o cookie de login ganha `Secure` e a resposta leva `Strict-Transport-Security`.
+- **Limite de tentativas no login** (`rotas/conta.js`): 5 senhas erradas para o mesmo e-mail travam o login dele por 15 minutos (resposta 429). A contagem fica na memória.
+- **Senhas** com scrypt; as contas de demonstração nascem com senha sorteada.
