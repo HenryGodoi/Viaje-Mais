@@ -24,4 +24,10 @@ fetch('/api/vitrine').then(r => r.json()).then(l => {
   $('saidas').innerHTML = l.length ? l.map(saida).join('') : '<li class="quadro-msg">Nenhuma saída com vaga agora. Os passeios avisam aqui quando sobra lugar.</li>';
 }).catch(() => { $('saidas').innerHTML = '<li class="quadro-msg">Sem conexão para mostrar as saídas agora.</li>'; });
 
+// Hero: as fotos dos passeios se alternam ao fundo (parado para quem pede menos movimento)
+const fotos = document.querySelectorAll('.hero-fotos img');
+if (fotos.length > 1 && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  let n = 0; setInterval(() => { fotos[n].classList.remove('on'); n = (n + 1) % fotos.length; fotos[n].classList.add('on'); }, 5000);
+}
+
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');

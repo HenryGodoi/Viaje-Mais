@@ -8,7 +8,7 @@ const pct = o => o.livres <= 0 ? 0 : falta(o) <= HORAS_ULTIMA ? o.descontoMax : 
 
 const vis = o => {
   const pa = db.passeios.find(x => x.id === o.passeioId), d = pct(o);
-  return { ...o, titulo: pa.titulo, cidade: pa.cidade, categoria: pa.categoria || 'Natureza', descricao: pa.descricao,
+  return { ...o, titulo: pa.titulo, cidade: pa.cidade, categoria: pa.categoria || 'Natureza', descricao: pa.descricao, fotos: pa.fotos || [],
     operador: db.users.find(u => u.id === o.operadorId)?.nome, precoNormal: pa.preco, desconto: d,
     precoFinal: +(pa.preco * (1 - d / 100)).toFixed(2), ultimaHora: o.livres > 0 && falta(o) <= HORAS_ULTIMA };
 };

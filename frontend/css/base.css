@@ -4,3 +4,6 @@
   --pendente:#FFE9A8;--aviso:#FFF4CC;--cinza:#E3E3E3;
   --fonte-texto:Nunito,sans-serif;--fonte-titulo:Fredoka,sans-serif}
 *{box-sizing:border-box}
+.logo-img{height:44px;width:auto;display:block}
+.logo-img.chip{background:var(--branco);padding:12px 22px;border-radius:16px;height:88px}
+@media(max-width:860px){.logo-img.chip{height:68px;padding:10px 16px}}

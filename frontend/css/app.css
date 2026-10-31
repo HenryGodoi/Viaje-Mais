@@ -103,6 +103,11 @@ input:focus,textarea:focus,select:focus{border-color:var(--medio);outline:0}
 .oferta .corpo{padding:18px 20px 20px;display:grid;gap:10px;flex:1;align-content:start}
 .oferta h3{font-size:21px;line-height:1.2}
 .oferta .tag{justify-self:start}
+.oferta .foto{width:100%;height:150px;object-fit:cover;display:block}
+.oferta .foto + .selo{min-height:0;padding:12px 20px}
+.oferta .foto + .selo b{font-size:32px}
+.galeria{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 0 18px;padding-bottom:6px}
+.galeria img{flex:0 0 260px;height:170px;object-fit:cover;border-radius:12px;scroll-snap-align:start}
 .preco{margin:0;display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px}
 .preco s{color:var(--muted);font-weight:600}
 .preco strong{font:700 24px/1.1 var(--fonte-titulo);color:var(--medio)}
@@ -112,7 +117,8 @@ input:focus,textarea:focus,select:focus{border-color:var(--medio);outline:0}
 .barra i{display:block;height:100%;background:var(--lima);border-radius:99px}
 
 /* detalhe da oferta */
-.det{display:grid;grid-template-columns:1fr 380px;gap:40px;align-items:start}
+.det{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:40px;align-items:start}
+.det>*{min-width:0}
 .resumo{border:1px solid var(--suave);border-radius:16px;overflow:hidden;margin-bottom:32px}
 .resumo .corpo{padding:20px;display:grid;gap:12px}
 .resumo .preco strong{font-size:32px}
@@ -204,7 +210,7 @@ input:disabled{background:var(--claro);color:var(--muted)}
   .faixa h1{font-size:30px}.faixa p{font-size:16px}
   .nav{margin-top:20px}.nav a{padding:10px 16px}
   .app main.w{padding-top:24px}
-  .det,.duas,.perfil{grid-template-columns:1fr;gap:28px}
+  .det,.duas,.perfil{grid-template-columns:minmax(0,1fr);gap:28px}
   .cartao-perfil{position:static}
   .det .caixa{position:static}
   .lista>li,.lista>a{grid-template-columns:1fr}

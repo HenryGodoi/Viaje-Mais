@@ -55,7 +55,8 @@ const vagasTxt = o => `${o.livres === 1 ? 'Resta 1 vaga' : `Restam ${o.livres} v
 const ocupacao = o => `<div class="ocupacao"><div class="barra" aria-hidden="true"><i style="width:${Math.round(100 * o.livres / o.vagas)}%"></i></div><span>${vagasTxt(o)}</span></div>`;
 const selo = o => `<div class="selo${o.ultimaHora ? ' ultima' : ''}"><div>${o.desconto ? `<b>${o.desconto}%</b><span>de desconto</span>` : '<span>Preço normal</span>'}</div>${o.ultimaHora ? `<em>${ICONE.relogio}Última hora</em>` : ''}</div>`;
 const preco = o => `<p class="preco">${o.desconto ? `<s>${brl(o.precoNormal)}</s>` : ''}<strong>${brl(o.precoFinal)}</strong><small>por pessoa</small></p>`;
-const card = o => `<a class="oferta" href="#/oferta/${o.id}">${selo(o)}<div class="corpo"><span class="tag">${esc(o.categoria)}</span><h3>${esc(o.titulo)}</h3><p class="meta">${esc(o.cidade)}<br>${quando(o.inicio)}</p>${preco(o)}${ocupacao(o)}</div></a>`;
+const foto = o => o.fotos?.length ? `<img class="foto" src="${esc(o.fotos[0])}" alt="${esc(o.titulo)}" loading="lazy">` : '';
+const card = o => `<a class="oferta" href="#/oferta/${o.id}">${foto(o)}${selo(o)}<div class="corpo"><span class="tag">${esc(o.categoria)}</span><h3>${esc(o.titulo)}</h3><p class="meta">${esc(o.cidade)}<br>${quando(o.inicio)}</p>${preco(o)}${ocupacao(o)}</div></a>`;
 
 async function vOfertas() {
   let l; try { l = await api('/api/ofertas'); } catch (e) { if (e instanceof TypeError) { location.hash = '#/reservas'; return; } throw e; }
@@ -73,6 +74,7 @@ async function vOferta(id) {
   tela('/oferta', esc(o.titulo), `${esc(o.cidade)}, ${quando(o.inicio)}. Oferecido por ${esc(o.operador)}.`,
     `<a class="voltar" href="#/">${ICONE.voltar}Voltar às ofertas</a><div class="det"><div>
     <div class="resumo">${selo(o)}<div class="corpo">${preco(o)}${ocupacao(o)}<p class="nota">Quanto mais vagas sobram, maior o desconto. Reservando agora, você garante este preço.</p></div></div>
+    ${o.fotos?.length ? `<div class="galeria">${o.fotos.map(f => `<img src="${esc(f)}" alt="${esc(o.titulo)}" loading="lazy">`).join('')}</div>` : ''}
     <div class="sobre"><h2>Sobre o passeio</h2><p><span class="tag">${esc(o.categoria)}</span></p><p>${esc(o.descricao) || 'O operador ainda não escreveu uma descrição.'}</p></div></div>
     <form class="caixa" id="r"><h2>Reservar</h2>
     <div><label for="n">Seu nome</label><input id="n" value="${esc(U.nome)}" autocomplete="name" required></div>
