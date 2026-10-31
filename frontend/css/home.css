@@ -58,7 +58,9 @@ h2{font-size:40px;margin:0}
 .mais{font-weight:700;color:var(--escuro);border-bottom:2px solid var(--lima)}
 .grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:24px}
 .dest{display:block;border:1px solid var(--suave);border-radius:16px;overflow:hidden}
-.dest .img{height:160px;background:linear-gradient(150deg,var(--medio),var(--lima));display:flex;padding:14px}
+.dest .img{height:160px;background:linear-gradient(150deg,var(--medio),var(--lima));display:flex;padding:14px;position:relative;overflow:hidden}
+.dest .img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dest .img .tag{position:relative;z-index:1}
 .tag{align-self:flex-start;background:var(--branco);color:var(--ink);font-weight:700;font-size:13px;padding:3px 12px;border-radius:8px}
 .dest .tx{padding:18px 20px 22px}
 .dest h3{font-size:21px;margin:0 0 6px}
