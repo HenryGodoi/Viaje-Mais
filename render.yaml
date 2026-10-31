@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: viaje-mais
+    runtime: node
+    plan: free
+    buildCommand: echo "sem dependencias"
+    startCommand: node server.js
+    envVars:
+      - key: ADMIN_SENHA
+        sync: false
+      - key: OPERADOR_SENHA
+        sync: false
