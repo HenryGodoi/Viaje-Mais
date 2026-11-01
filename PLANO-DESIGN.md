@@ -84,7 +84,7 @@ Cada componente novo vira classes em `frontend/css/app.css` (cores sempre por `v
 ## Decidido
 
 - **Tecnologia:** o site continua em HTML, CSS e JS puros (Henry, 29/10/2026). React com Tailwind foi considerado e ficou de fora: exigiria npm, build e reescrever as três telas e o `sw.js`. Os exemplos da Spell UI servem só de referência visual.
-- **Paleta:** continua a "Viaje Mais — Verde" (Henry, 29/10/2026). Todas as peças novas usam as cores do `base.css`.
+- **Paleta:** a "Viaje Mais — Verde" foi trocada pela paleta marinho, céu, branco e laranja, na regra 60-30-10 (Henry, 01/11/2026). Todas as peças novas usam as cores do `base.css`.
 - **Gerador de QR:** copiar um arquivo pronto (Henry, 29/10/2026). Candidato: `js/qrcode.js` do projeto `qrcode-generator` de Kazuhiko Arase (licença MIT, um arquivo só, sem npm, muito usado). Entra como `frontend/js/qrcode.js`, com o aviso de licença no topo do arquivo, e na lista `SHELL` do `sw.js`. O voucher desenha o QR com `createSvgTag()`, a partir do código da reserva.
 - **Câmera:** o vendedor lê o QR pela câmera já nesta mudança, no Chrome do Android, e digitar o código continua valendo (Henry, 29/10/2026). Detalhes na seção 4.
 

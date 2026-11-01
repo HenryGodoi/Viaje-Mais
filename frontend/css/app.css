@@ -1,35 +1,35 @@
 /* Viaje Mais — login (entrar.html) e painel (painel.html). Usa as variáveis de base.css. */
-body{margin:0;font-family:var(--fonte-texto);color:var(--ink);background:var(--branco)}
+body{margin:0;font-family:var(--fonte-texto);color:var(--texto);background:var(--fundo)}
 h1,h2,h3,.logo{font-family:var(--fonte-titulo);margin:0}
 button{font:inherit;cursor:pointer}
-:focus-visible{outline:3px solid var(--medio);outline-offset:2px}
+:focus-visible{outline:3px solid var(--foco);outline-offset:2px}
 .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:28px}
-.btn{border:0;border-radius:10px;padding:14px 22px;font-weight:700;font-size:16px;background:var(--escuro);color:var(--branco)}
-.btn.sec{background:var(--branco);color:var(--ink);border:2px solid var(--suave)}
-.btn.peq{padding:8px 14px;font-size:14px}.btn.perigo{background:var(--erro)}
+.btn{border:0;border-radius:10px;padding:14px 22px;font-weight:700;font-size:16px;background:var(--laranja);color:var(--marinho)}
+.btn.sec{background:none;color:var(--texto);border:2px solid var(--borda)}
+.btn.peq{padding:8px 14px;font-size:14px}.btn.perigo{background:var(--perigo);color:var(--texto)}
 .btn:disabled{opacity:.6;cursor:progress}
 label{display:block;font-weight:700;font-size:15px;margin-bottom:8px}
-input,textarea,select{width:100%;font:inherit;padding:14px 16px;border:2px solid var(--suave);border-radius:10px;background:var(--branco);color:var(--ink)}
-input:focus,textarea:focus,select:focus{border-color:var(--medio);outline:0}
-.msg{min-height:22px;font-size:15px;font-weight:700}.msg.erro{color:var(--erro)}.msg.ok{color:var(--medio)}
+input,textarea,select{width:100%;font:inherit;padding:14px 16px;border:2px solid var(--borda);border-radius:10px;background:var(--fundo);color:var(--texto)}
+input:focus,textarea:focus,select:focus{border-color:var(--foco);outline:0}
+.msg{min-height:22px;font-size:15px;font-weight:700}.msg.erro{color:var(--erro)}.msg.ok{color:var(--realce)}
 /* login */
 .auth{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
-.lado{background:linear-gradient(150deg,var(--escuro) 55%,var(--medio));color:var(--branco);padding:56px 72px;display:flex;flex-direction:column;justify-content:space-between}
+.lado{background:linear-gradient(150deg,var(--marinho) 55%,var(--noite));color:var(--branco);padding:56px 72px;display:flex;flex-direction:column;justify-content:space-between}
 .lado h1{font-size:clamp(34px,4vw,52px);line-height:1.1;max-width:520px}
 .lado p{font-size:19px;line-height:1.55;max-width:500px;margin:20px 0 0}
-.lado .regiao{color:var(--lima);font-weight:700;margin-bottom:18px}
-.form{display:flex;align-items:center;justify-content:center;padding:32px}
+.lado .regiao{color:var(--realce);font-weight:700;margin-bottom:18px}
+.form{background:var(--fundo);display:flex;align-items:center;justify-content:center;padding:32px}
 .card{width:100%;max-width:440px;display:grid;gap:16px}
-.abas{display:flex;gap:6px;padding:6px;background:var(--claro);border-radius:12px}
+.abas{display:flex;gap:6px;padding:6px;background:var(--tinta);border-radius:12px}
 .abas button{flex:1;border:0;padding:12px;border-radius:9px;background:none;font-weight:700;color:var(--muted)}
-.abas button[aria-selected=true]{background:var(--escuro);color:var(--branco)}
+.abas button[aria-selected=true]{background:var(--laranja);color:var(--marinho)}
 .card h2{font-size:34px}.card .sub{color:var(--muted);margin:-6px 0 0;line-height:1.5}
 .google{display:flex;align-items:center;justify-content:center;gap:12px}
 .div{display:flex;align-items:center;gap:14px;color:var(--muted);font-weight:600;font-size:14px}
-.div::before,.div::after{content:"";flex:1;height:1px;background:var(--suave)}
+.div::before,.div::after{content:"";flex:1;height:1px;background:var(--borda)}
 .perfis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.perfis label{margin:0;border:2px solid var(--suave);border-radius:10px;padding:12px;font-weight:600;cursor:pointer;display:flex;gap:8px;align-items:center}
-.perfis input{width:auto}.perfis label:has(input:checked){border-color:var(--medio);background:var(--claro)}
+.perfis label{margin:0;border:2px solid var(--borda);border-radius:10px;padding:12px;font-weight:600;cursor:pointer;display:flex;gap:8px;align-items:center}
+.perfis input{width:auto}.perfis label:has(input:checked){border-color:var(--foco);background:var(--tinta)}
 .hidden{display:none!important}
 /* campo com rótulo flutuante: o rótulo fica dentro do campo e sobe quando a pessoa clica ou digita.
    O placeholder=" " no HTML é o que permite saber se o campo está vazio (:placeholder-shown). */
@@ -37,15 +37,15 @@ input:focus,textarea:focus,select:focus{border-color:var(--medio);outline:0}
 .campo input{padding:25px 16px 7px}
 .campo label{position:absolute;left:18px;top:17px;margin:0;font-weight:600;color:var(--muted);pointer-events:none;transform-origin:left top}
 .campo input:not(:placeholder-shown)+label{transform:translateY(-10px) scale(.8);font-weight:700}
-.campo input:focus+label{transform:translateY(-10px) scale(.8);font-weight:700;color:var(--medio)}
+.campo input:focus+label{transform:translateY(-10px) scale(.8);font-weight:700;color:var(--realce)}
 .campo input:autofill+label{transform:translateY(-10px) scale(.8);font-weight:700}
-.campo input:focus{box-shadow:0 0 0 4px color-mix(in srgb,var(--medio) 22%,transparent)}
+.campo input:focus{box-shadow:0 0 0 4px color-mix(in srgb,var(--foco) 22%,transparent)}
 /* spinner: círculo girando enquanto algo carrega. No botão, aparece com a classe .carregando (ver aoEnviar). */
 .spinner,.btn.carregando::before{content:"";display:inline-block;width:1.1em;height:1.1em;border:3px solid currentColor;border-right-color:transparent;border-radius:50%;animation:girar .7s linear infinite;flex:none}
 .btn.carregando{display:inline-flex;align-items:center;justify-content:center;gap:10px}
 @keyframes girar{to{transform:rotate(360deg)}}
 .carregando-tela{display:flex;align-items:center;gap:12px;color:var(--muted);font-weight:700;margin:0}
-.carregando-tela .spinner{color:var(--medio);width:26px;height:26px}
+.carregando-tela .spinner{color:var(--realce);width:26px;height:26px}
 @media(max-width:860px){.auth{grid-template-columns:1fr}.lado{padding:32px 24px;gap:20px;border-radius:0 0 28px 28px}.lado p,.lado .regiao{display:none}}
 @media(prefers-reduced-motion:no-preference){.btn{transition:transform .12s}.btn:active{transform:scale(.98)}
   .campo label{transition:transform .15s,color .15s}.campo input{transition:box-shadow .15s,border-color .15s}}
@@ -57,35 +57,35 @@ input:focus,textarea:focus,select:focus{border-color:var(--medio);outline:0}
 .app a{color:inherit}
 
 /* topo branco, igual ao da home */
-.app .topo{background:var(--branco);border-bottom:1px solid var(--suave)}
+.app .topo{background:var(--fundo);border-bottom:1px solid var(--borda)}
 .app .topo .w{height:76px;display:flex;align-items:center;justify-content:space-between;gap:20px}
-.app .brand{font-family:var(--fonte-titulo);font-weight:700;font-size:26px;color:var(--escuro);display:flex;align-items:center;gap:10px;text-decoration:none}
+.app .brand{font-family:var(--fonte-titulo);font-weight:700;font-size:26px;color:var(--texto);display:flex;align-items:center;gap:10px;text-decoration:none}
 .app .quem{display:flex;gap:14px;align-items:center;font-weight:700}
-.app .papel{background:var(--claro);color:var(--escuro);padding:4px 12px;border-radius:99px;font-size:14px}
+.app .papel{background:var(--tinta);color:var(--texto);padding:4px 12px;border-radius:99px;font-size:14px}
 
 /* faixa verde: título da tela e abas que "encaixam" no conteúdo branco */
-.faixa{background:var(--escuro);background-image:linear-gradient(120deg,var(--escuro) 0%,var(--escuro) 50%,var(--medio) 150%);color:var(--branco)}
+.faixa{background:var(--noite);background-image:linear-gradient(120deg,var(--marinho) 0%,var(--noite) 100%);color:var(--branco)}
 .faixa .w{padding-top:40px}
 .faixa.sem-abas .w{padding-bottom:40px}
 .faixa h1{font-size:40px;line-height:1.1}
-.faixa p{margin:10px 0 0;color:var(--suave);font-size:18px;max-width:640px}
+.faixa p{margin:10px 0 0;color:var(--muted);font-size:18px;max-width:640px}
 .nav{display:flex;gap:4px;margin-top:28px;overflow-x:auto}
-.nav a{padding:12px 22px;border-radius:12px 12px 0 0;color:var(--suave);font-weight:700;text-decoration:none;white-space:nowrap}
-.nav a:hover{color:var(--branco);background:rgba(255,255,255,.08)}
-.nav a[aria-current=page]{background:var(--branco);color:var(--escuro)}
-.nav a:focus-visible{outline-color:var(--lima);outline-offset:-3px}
+.nav a{padding:12px 22px;border-radius:12px 12px 0 0;color:var(--muted);font-weight:700;text-decoration:none;white-space:nowrap}
+.nav a:hover{color:var(--texto);background:var(--tinta)}
+.nav a[aria-current=page]{background:var(--fundo);color:var(--texto)}
+.nav a:focus-visible{outline-color:var(--ceu);outline-offset:-3px}
 
 .app main.w{padding-top:36px;padding-bottom:72px}
 .app h2{font-size:26px;margin-bottom:16px}
 .meta{color:var(--muted);margin:0}
-.tag{display:inline-block;padding:3px 12px;border-radius:99px;font-size:13px;font-weight:700;background:var(--claro);color:var(--escuro)}
-.tag.pendente{background:var(--pendente)}.tag.reservada,.tag.aprovado,.tag.ativo{background:var(--suave)}
-.tag.usada,.tag.cancelada{background:var(--cinza);color:var(--muted)}
-.aviso{background:var(--aviso);border-radius:10px;padding:12px 14px;font-weight:600;margin:0}
-.voltar{display:inline-flex;align-items:center;gap:6px;margin-bottom:22px;font-weight:700;color:var(--medio);text-decoration:none}
+.tag{display:inline-block;padding:3px 12px;border-radius:99px;font-size:13px;font-weight:700;background:var(--branco);color:var(--marinho)}
+.tag.pendente{background:var(--pendente)}.tag.reservada,.tag.aprovado,.tag.ativo{background:var(--ceu)}
+.tag.usada,.tag.cancelada{background:var(--aco);color:var(--branco)}
+.aviso{background:var(--aviso);color:var(--marinho);border-radius:10px;padding:12px 14px;font-weight:600;margin:0}
+.voltar{display:inline-flex;align-items:center;gap:6px;margin-bottom:22px;font-weight:700;color:var(--realce);text-decoration:none}
 .voltar:hover{text-decoration:underline}
-.vazio{padding:28px;border:2px dashed var(--suave);border-radius:16px;color:var(--muted)}
-.vazio strong{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}.vazio p{margin:0}.vazio a{color:var(--medio);font-weight:700}
+.vazio{padding:28px;border:2px dashed var(--borda);border-radius:16px;color:var(--muted)}
+.vazio strong{display:block;color:var(--texto);font-size:17px;margin-bottom:4px}.vazio p{margin:0}.vazio a{color:var(--realce);font-weight:700}
 
 /* filtros */
 .filtros{display:flex;gap:12px;margin:0 0 28px;flex-wrap:wrap}.filtros select{width:auto;min-width:200px}
@@ -93,13 +93,13 @@ input:focus,textarea:focus,select:focus{border-color:var(--medio);outline:0}
 
 /* cartão de oferta: o selo verde mostra o desconto, a barra mostra quanto do horário está vazio */
 .grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:24px}
-.oferta{display:flex;flex-direction:column;border:1px solid var(--suave);border-radius:16px;overflow:hidden;text-decoration:none;background:var(--branco)}
-.oferta:hover{border-color:var(--medio)}
-.selo{background:var(--escuro);color:var(--branco);padding:18px 20px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;min-height:96px}
-.selo b{font:700 46px/1 var(--fonte-titulo);color:var(--lima);display:block}
-.selo span{font-weight:700;color:var(--suave)}
-.selo em{font-style:normal;font-weight:800;font-size:14px;background:var(--lima);color:var(--escuro);padding:5px 12px 5px 9px;border-radius:99px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.selo.ultima{background:linear-gradient(120deg,var(--escuro) 40%,var(--medio))}
+.oferta{display:flex;flex-direction:column;border:1px solid var(--borda);border-radius:16px;overflow:hidden;text-decoration:none;background:var(--superficie)}
+.oferta:hover{border-color:var(--foco)}
+.selo{background:var(--fundo);padding:18px 20px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;min-height:96px}
+.selo b{font:700 46px/1 var(--fonte-titulo);color:var(--realce);display:block}
+.selo span{font-weight:700;color:var(--muted)}
+.selo em{font-style:normal;font-weight:800;font-size:14px;background:var(--laranja);color:var(--marinho);padding:5px 12px 5px 9px;border-radius:99px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.selo.ultima{background:var(--ceu);--muted:var(--marinho);--realce:var(--marinho)}
 .oferta .corpo{padding:18px 20px 20px;display:grid;gap:10px;flex:1;align-content:start}
 .oferta h3{font-size:21px;line-height:1.2}
 .oferta .tag{justify-self:start}
@@ -110,40 +110,40 @@ input:focus,textarea:focus,select:focus{border-color:var(--medio);outline:0}
 .galeria img{flex:0 0 260px;height:170px;object-fit:cover;border-radius:12px;scroll-snap-align:start}
 .preco{margin:0;display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px}
 .preco s{color:var(--muted);font-weight:600}
-.preco strong{font:700 24px/1.1 var(--fonte-titulo);color:var(--medio)}
+.preco strong{font:700 24px/1.1 var(--fonte-titulo);color:var(--realce)}
 .preco small{color:var(--muted);font-weight:600}
 .ocupacao{display:grid;gap:6px;font-size:14px;font-weight:700;color:var(--muted)}
-.barra{height:8px;border-radius:99px;background:var(--claro);overflow:hidden}
-.barra i{display:block;height:100%;background:var(--lima);border-radius:99px}
+.barra{height:8px;border-radius:99px;background:var(--tinta);overflow:hidden}
+.barra i{display:block;height:100%;background:var(--ceu);border-radius:99px}
 
 /* detalhe da oferta */
 .det{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:40px;align-items:start}
 .det>*{min-width:0}
-.resumo{border:1px solid var(--suave);border-radius:16px;overflow:hidden;margin-bottom:32px}
+.resumo{border:1px solid var(--borda);border-radius:16px;overflow:hidden;margin-bottom:32px}
 .resumo .corpo{padding:20px;display:grid;gap:12px}
 .resumo .preco strong{font-size:32px}
 .nota{margin:0;color:var(--muted);font-size:15px}
 .sobre p{margin:0 0 12px;max-width:640px}
 
 /* caixas de formulário */
-.caixa{display:grid;gap:16px;border:1px solid var(--suave);border-radius:16px;padding:24px;background:var(--branco)}
+.caixa{display:grid;gap:16px;border:1px solid var(--borda);border-radius:16px;padding:24px;background:var(--superficie)}
 .caixa h2{margin:0;font-size:22px}
-.caixa .total{font:700 22px var(--fonte-titulo);color:var(--escuro)}
-.det .caixa{position:sticky;top:20px;box-shadow:0 8px 24px rgba(14,59,43,.08)}
+.caixa .total{font:700 22px var(--fonte-titulo);color:var(--texto)}
+.det .caixa{position:sticky;top:20px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
 .duas{display:grid;grid-template-columns:360px 1fr;gap:40px;align-items:start}
 
 /* listas (reservas, ofertas do operador, passeios, admin) */
-.lista{list-style:none;margin:0;padding:0;border:1px solid var(--suave);border-radius:16px;overflow:hidden}
-.lista>li,.lista>a{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px 20px;padding:16px 20px;border-top:1px solid var(--suave);text-decoration:none}
+.lista{list-style:none;margin:0;padding:0;background:var(--superficie);border:1px solid var(--borda);border-radius:16px;overflow:hidden}
+.lista>li,.lista>a{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px 20px;padding:16px 20px;border-top:1px solid var(--borda);text-decoration:none}
 .lista>:first-child{border-top:0}
-.lista>a:hover{background:var(--claro)}
+.lista>a:hover{background:var(--tinta)}
 .lista .principal strong{display:block;font-size:17px}
 .lista .principal .ocupacao{margin-top:10px;max-width:300px}
 .fim{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px 16px}
-.lista .valor{font:700 20px var(--fonte-titulo);color:var(--escuro);text-align:right}
+.lista .valor{font:700 20px var(--fonte-titulo);color:var(--texto);text-align:right}
 .lista .valor small{display:block;font:600 14px var(--fonte-texto);color:var(--muted)}
-.lista .agora{font-weight:700;color:var(--muted);white-space:nowrap}.lista .agora b{font:700 22px var(--fonte-titulo);color:var(--medio)}
-.lista .pendente{background:color-mix(in srgb,var(--pendente) 30%,var(--branco))}
+.lista .agora{font-weight:700;color:var(--muted);white-space:nowrap}.lista .agora b{font:700 22px var(--fonte-titulo);color:var(--realce)}
+.lista .pendente{background:color-mix(in srgb,var(--pendente) 14%,var(--superficie))}
 .acoes{display:flex;gap:8px}
 .secao{margin-bottom:44px}
 
@@ -151,54 +151,55 @@ input:focus,textarea:focus,select:focus{border-color:var(--medio);outline:0}
    A inclinação é feita pela função inclinar() em painel.js; o "palco" dá a profundidade (perspective). */
 .palco{perspective:1200px;max-width:600px;margin-bottom:22px}
 .voucher{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"topo topo" "info qr" "dados qr";gap:18px 24px;padding:24px;border-radius:22px;color:var(--branco);
-  background:linear-gradient(135deg,var(--escuro) 35%,var(--medio) 140%);transition:transform .15s ease-out;
-  box-shadow:0 8px 16px color-mix(in srgb,var(--escuro) 14%,transparent),0 16px 32px color-mix(in srgb,var(--escuro) 10%,transparent),0 24px 48px color-mix(in srgb,var(--escuro) 6%,transparent)}
+  background:linear-gradient(135deg,var(--noite) 35%,var(--aco) 140%);transition:transform .15s ease-out;
+  box-shadow:0 8px 16px color-mix(in srgb,var(--marinho) 14%,transparent),0 16px 32px color-mix(in srgb,var(--marinho) 10%,transparent),0 24px 48px color-mix(in srgb,var(--marinho) 6%,transparent)}
 .v-topo{grid-area:topo;display:flex;justify-content:space-between;align-items:center;gap:12px}
-.v-marca{display:flex;align-items:center;gap:8px;font:700 20px var(--fonte-titulo);color:var(--lima)}
+.v-marca{display:flex;align-items:center;gap:8px;font:700 20px var(--fonte-titulo);color:var(--branco)}
+.v-marca img{width:26px;height:auto}
 .v-info{grid-area:info}
 .v-info h2{font-size:26px;line-height:1.15;margin:0 0 6px;overflow-wrap:anywhere}
-.v-info p{margin:0;color:var(--suave)}
+.v-info p{margin:0;color:var(--muted)}
 .v-dados{grid-area:dados;align-self:end;margin:0;display:flex;flex-wrap:wrap;gap:10px 24px}
-.v-dados dt{font-size:13px;color:var(--suave);font-weight:600}.v-dados dd{margin:0;font-weight:800;overflow-wrap:anywhere}
-.v-qr{grid-area:qr;width:190px;background:var(--branco);color:var(--escuro);border-radius:16px;padding:8px 8px 12px;display:grid;gap:4px;text-align:center}
+.v-dados dt{font-size:13px;color:var(--muted);font-weight:600}.v-dados dd{margin:0;font-weight:800;overflow-wrap:anywhere}
+.v-qr{grid-area:qr;width:190px;background:var(--branco);border-radius:16px;padding:8px 8px 12px;display:grid;gap:4px;text-align:center}
 .v-qr button{border:0;background:none;padding:0;border-radius:10px;cursor:zoom-in}
 .v-qr svg,.qr-grande svg{display:block;width:100%;height:auto}
 .v-qr small{font-size:12px;font-weight:700;color:var(--muted)}
-.codigo{font:800 24px/1.1 ui-monospace,Consolas,monospace;letter-spacing:.12em;color:var(--escuro)}
+.codigo{font:800 24px/1.1 ui-monospace,Consolas,monospace;letter-spacing:.12em;color:var(--texto)}
 .voucher.usada,.voucher.cancelada{filter:grayscale(.9);opacity:.75}
 /* QR em tela cheia, para o vendedor ler com facilidade */
-.qr-grande{border:0;border-radius:20px;padding:20px;width:min(92vw,420px);text-align:center;display:grid;gap:14px}
+.qr-grande{background:var(--branco);border:0;border-radius:20px;padding:20px;width:min(92vw,420px);text-align:center;display:grid;gap:14px}
 .qr-grande:not([open]){display:none}
-.qr-grande::backdrop{background:color-mix(in srgb,var(--escuro) 75%,transparent)}
+.qr-grande::backdrop{background:color-mix(in srgb,var(--marinho) 75%,transparent)}
 .qr-grande .codigo{font-size:34px}
 
 /* perfil do viajante */
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.sr:focus-visible+label{outline:3px solid var(--medio);outline-offset:2px}
+.sr:focus-visible+label{outline:3px solid var(--foco);outline-offset:2px}
 .eu{text-decoration:none;border-radius:50%}
-.avatar{width:36px;height:36px;border-radius:50%;background:var(--claro);color:var(--escuro);display:inline-flex;align-items:center;justify-content:center;font:700 16px var(--fonte-titulo);overflow:hidden;flex:none;border:2px solid var(--suave)}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--tinta);color:var(--texto);display:inline-flex;align-items:center;justify-content:center;font:700 16px var(--fonte-titulo);overflow:hidden;flex:none;border:2px solid var(--borda)}
 .avatar img{width:100%;height:100%;object-fit:cover}
 .avatar.grande{width:112px;height:112px;font-size:44px;border-width:3px}
 .perfil{display:grid;grid-template-columns:300px 1fr;gap:40px;align-items:start}
-.cartao-perfil{border:1px solid var(--suave);border-radius:16px;padding:28px 24px;display:grid;justify-items:center;gap:10px;text-align:center;position:sticky;top:20px}
+.cartao-perfil{background:var(--superficie);border:1px solid var(--borda);border-radius:16px;padding:28px 24px;display:grid;justify-items:center;gap:10px;text-align:center;position:sticky;top:20px}
 .cartao-perfil h2{margin:6px 0 0;font-size:24px}
 .cartao-perfil label.btn{margin:8px 0 0;cursor:pointer}
 .link{background:none;border:0;padding:0;color:var(--muted);font-weight:700;text-decoration:underline;text-underline-offset:3px}
-.numeros{margin:14px 0 0;padding-top:16px;border-top:1px solid var(--suave);width:100%;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.numeros{margin:14px 0 0;padding-top:16px;border-top:1px solid var(--borda);width:100%;display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .numeros dt{font-size:13px;color:var(--muted);font-weight:700}
-.numeros dd{margin:2px 0 0;font:700 22px var(--fonte-titulo);color:var(--escuro)}
+.numeros dd{margin:2px 0 0;font:700 22px var(--fonte-titulo);color:var(--texto)}
 .perfil-secoes .caixa{max-width:560px}
 .perfil-secoes .nota{margin:6px 0 0}
-input:disabled{background:var(--claro);color:var(--muted)}
-.zona-perigo{border-color:color-mix(in srgb,var(--erro) 35%,var(--branco))}
+input:disabled{background:var(--tinta);color:var(--muted)}
+.zona-perigo{border-color:color-mix(in srgb,var(--erro) 35%,var(--superficie))}
 .zona-perigo h2{color:var(--erro)}
 
 /* resultado da validação */
-.resultado{display:flex;gap:14px;align-items:flex-start;background:var(--suave);border-radius:16px;padding:18px 20px;max-width:520px}
-.resultado svg{flex:none;color:var(--medio)}
-.resultado strong{display:block;font:700 20px var(--fonte-titulo);color:var(--escuro)}
+.resultado{display:flex;gap:14px;align-items:flex-start;background:var(--fundo);border-radius:16px;padding:18px 20px;max-width:520px}
+.resultado svg{flex:none;color:var(--realce)}
+.resultado strong{display:block;font:700 20px var(--fonte-titulo);color:var(--texto)}
 .resultado p{margin:4px 0 0}
-.camera{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;background:var(--ink)}
+.camera{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;background:var(--marinho)}
 .codigo-input{font:700 24px ui-monospace,Consolas,monospace!important;letter-spacing:.1em;text-transform:uppercase}
 
 @media(max-width:860px){

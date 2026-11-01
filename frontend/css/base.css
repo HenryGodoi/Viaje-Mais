@@ -1,9 +1,21 @@
-/* Viaje Mais — base de todas as páginas: cores, fontes e reset. Mude uma cor aqui e ela muda no site todo. */
+/* Viaje Mais — base de todas as páginas: cores, fontes e reset. Mude uma cor aqui e ela muda no site todo.
+   Regra 60-30-10: 60% tons escuros (marinho, noite, aço), 30% tons claros (branco, céu), 10% destaque (laranja). */
 :root{
-  --escuro:#0E3B2B;--medio:#1E8A55;--claro:#EDF7F0;--suave:#D5EEDD;--lima:#B8E26B;--ink:#0E2A20;--muted:#3F5F50;--erro:#B3261E;--branco:#fff;
-  --pendente:#FFE9A8;--aviso:#FFF4CC;--cinza:#E3E3E3;
-  --fonte-texto:Nunito,sans-serif;--fonte-titulo:Fredoka,sans-serif}
+  --marinho:#0B132B;--noite:#1C2541;--aco:#3A506B;--ceu:#5BC0DE;--laranja:#D97706;--branco:#fff;
+  --perigo:#B3261E;--pendente:#FFE9A8;--aviso:#FFF4CC;
+  /* papéis: as telas usam estes nomes, e as áreas claras (abaixo) só trocam o valor deles */
+  --fundo:var(--marinho);--superficie:var(--noite);--borda:var(--aco);--texto:var(--branco);
+  --muted:color-mix(in srgb,var(--branco) 72%,var(--noite));--realce:var(--laranja);--foco:var(--ceu);--erro:#FF9C8F;
+  --tinta:color-mix(in srgb,var(--branco) 10%,transparent);
+  --fonte-texto:Nunito,sans-serif;--fonte-titulo:Fredoka,sans-serif;color-scheme:dark}
+/* áreas claras: os 30% da regra. Laranja puro no branco fica ilegível como texto, por isso o --realce escurece. */
+.quadro,.busca,.cats,.como,.news,footer,.form,.selo,.resultado,.v-qr,.qr-grande{
+  --fundo:var(--branco);--superficie:color-mix(in srgb,var(--marinho) 5%,var(--branco));
+  --borda:color-mix(in srgb,var(--marinho) 18%,var(--branco));--texto:var(--marinho);--muted:var(--aco);
+  --realce:color-mix(in srgb,var(--laranja) 55%,var(--marinho));--foco:var(--aco);--erro:var(--perigo);
+  --tinta:color-mix(in srgb,var(--marinho) 8%,transparent);color:var(--texto);color-scheme:light}
+.news{--muted:var(--marinho)}
 *{box-sizing:border-box}
 .logo-img{height:44px;width:auto;display:block}
-.logo-img.chip{background:var(--branco);padding:12px 22px;border-radius:16px;height:88px}
-@media(max-width:860px){.logo-img.chip{height:68px;padding:10px 16px}}
+.logo-img.grande{height:72px}
+@media(max-width:860px){.logo-img.grande{height:56px}}
