@@ -53,7 +53,7 @@ const topo = () => { $('nome').textContent = U.nome; $('papel').textContent = PA
 const vagasTxt = o => `${o.livres === 1 ? 'Resta 1 vaga' : `Restam ${o.livres} vagas`} de ${o.vagas}`;
 // A barra mostra quanto do horário ainda está vazio: é isso que define o desconto.
 const ocupacao = o => `<div class="ocupacao"><div class="barra" aria-hidden="true"><i style="width:${Math.round(100 * o.livres / o.vagas)}%"></i></div><span>${vagasTxt(o)}</span></div>`;
-const selo = o => `<div class="selo${o.ultimaHora ? ' ultima' : ''}"><div>${o.desconto ? `<b>${o.desconto}%</b><span>de desconto</span>` : '<span>Preço normal</span>'}</div>${o.ultimaHora ? `<em>${ICONE.relogio}Última hora</em>` : ''}</div>`;
+const selo = o => `<div class="selo"><div>${o.desconto ? `<b>${o.desconto}%</b><span>de desconto</span>` : '<span>Preço normal</span>'}</div>${o.ultimaHora ? `<em>${ICONE.relogio}Última hora</em>` : ''}</div>`;
 const preco = o => `<p class="preco">${o.desconto ? `<s>${brl(o.precoNormal)}</s>` : ''}<strong>${brl(o.precoFinal)}</strong><small>por pessoa</small></p>`;
 const foto = o => o.fotos?.length ? `<img class="foto" src="${esc(o.fotos[0])}" alt="${esc(o.titulo)}" loading="lazy">` : '';
 const card = o => `<a class="oferta" href="#/oferta/${o.id}">${foto(o)}${selo(o)}<div class="corpo"><span class="tag">${esc(o.categoria)}</span><h3>${esc(o.titulo)}</h3><p class="meta">${esc(o.cidade)}<br>${quando(o.inicio)}</p>${preco(o)}${ocupacao(o)}</div></a>`;

@@ -42,7 +42,7 @@ nav.m{display:flex;gap:36px;font-weight:600}
 .saida-nome strong{display:block;line-height:1.3}
 .saida-nome span{font-size:14px;color:var(--muted)}
 .saida-desc{text-align:right;font-variant-numeric:tabular-nums}
-.saida-desc b{display:block;font-size:20px;color:var(--realce)}
+.saida-desc b{display:block;font-size:20px;color:var(--laranja)}
 .saida-desc b.normal{font-size:15px;color:var(--muted)}
 .saida-desc span{font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap}
 .ultima{display:inline-block;margin-top:4px;background:var(--laranja);color:var(--marinho);font-size:12px;font-weight:800;padding:1px 8px;border-radius:99px}
@@ -61,7 +61,7 @@ h2{font-size:40px;margin:0}
 .dest .img{height:160px;background:linear-gradient(150deg,var(--noite),var(--aco));display:flex;padding:14px;position:relative;overflow:hidden}
 .dest .img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .dest .img .tag{position:relative;z-index:1}
-.tag{align-self:flex-start;background:var(--branco);color:var(--marinho);font-weight:700;font-size:13px;padding:3px 12px;border-radius:8px}
+.tag{align-self:flex-start;background:var(--aco);color:var(--branco);font-weight:700;font-size:13px;padding:3px 12px;border-radius:8px}
 .dest .tx{padding:18px 20px 22px}
 .dest h3{font-size:21px;margin:0 0 6px}
 .dest p{margin:0 0 10px;color:var(--muted)}

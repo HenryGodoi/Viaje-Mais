@@ -80,7 +80,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--foco);outline:0}
 .meta{color:var(--muted);margin:0}
 .tag{display:inline-block;padding:3px 12px;border-radius:99px;font-size:13px;font-weight:700;background:var(--branco);color:var(--marinho)}
 .tag.pendente{background:var(--pendente)}.tag.reservada,.tag.aprovado,.tag.ativo{background:var(--ceu)}
-.tag.usada,.tag.cancelada{background:var(--aco);color:var(--branco)}
+.tag.usada,.tag.cancelada,.oferta .tag,.sobre .tag{background:var(--aco);color:var(--branco)}
 .aviso{background:var(--aviso);color:var(--marinho);border-radius:10px;padding:12px 14px;font-weight:600;margin:0}
 .voltar{display:inline-flex;align-items:center;gap:6px;margin-bottom:22px;font-weight:700;color:var(--realce);text-decoration:none}
 .voltar:hover{text-decoration:underline}
@@ -91,15 +91,14 @@ input:focus,textarea:focus,select:focus{border-color:var(--foco);outline:0}
 .filtros{display:flex;gap:12px;margin:0 0 28px;flex-wrap:wrap}.filtros select{width:auto;min-width:200px}
 .filtros input{flex:1 1 260px;max-width:420px}
 
-/* cartão de oferta: o selo verde mostra o desconto, a barra mostra quanto do horário está vazio */
+/* cartão de oferta: o selo mostra o desconto, a barra mostra quanto do horário está vazio */
 .grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:24px}
 .oferta{display:flex;flex-direction:column;border:1px solid var(--borda);border-radius:16px;overflow:hidden;text-decoration:none;background:var(--superficie)}
 .oferta:hover{border-color:var(--foco)}
 .selo{background:var(--fundo);padding:18px 20px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;min-height:96px}
-.selo b{font:700 46px/1 var(--fonte-titulo);color:var(--realce);display:block}
+.selo b{font:700 46px/1 var(--fonte-titulo);color:var(--laranja);display:block}
 .selo span{font-weight:700;color:var(--muted)}
 .selo em{font-style:normal;font-weight:800;font-size:14px;background:var(--laranja);color:var(--marinho);padding:5px 12px 5px 9px;border-radius:99px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.selo.ultima{background:var(--ceu);--muted:var(--marinho);--realce:var(--marinho)}
 .oferta .corpo{padding:18px 20px 20px;display:grid;gap:10px;flex:1;align-content:start}
 .oferta h3{font-size:21px;line-height:1.2}
 .oferta .tag{justify-self:start}

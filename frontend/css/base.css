@@ -8,7 +8,7 @@
   --muted:color-mix(in srgb,var(--branco) 72%,var(--noite));--realce:var(--laranja);--foco:var(--ceu);--erro:#FF9C8F;
   --tinta:color-mix(in srgb,var(--branco) 10%,transparent);
   --fonte-texto:Nunito,sans-serif;--fonte-titulo:Fredoka,sans-serif;color-scheme:dark}
-/* áreas claras: os 30% da regra. Laranja puro no branco fica ilegível como texto, por isso o --realce escurece. */
+/* áreas claras: os 30% da regra. Laranja puro no branco só serve em texto grande (3,2:1), por isso o --realce escurece. */
 .quadro,.busca,.cats,.como,.news,footer,.form,.selo,.resultado,.v-qr,.qr-grande{
   --fundo:var(--branco);--superficie:color-mix(in srgb,var(--marinho) 5%,var(--branco));
   --borda:color-mix(in srgb,var(--marinho) 18%,var(--branco));--texto:var(--marinho);--muted:var(--aco);
