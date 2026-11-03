@@ -3,8 +3,9 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const brl = n => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const quando = i => new Date(i).toLocaleString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 const PAPEL = { cliente: 'Viajante', operador: 'Operador de turismo', admin: 'Administrador' };
-const CATS = ['Natureza', 'Cultura', 'Vinícola', 'Trilha', 'Gastronomia'];
-const ST = { reservada: 'Reservada', usada: 'Usada', cancelada: 'Cancelada', aprovado: 'Publicado', pendente: 'Em análise', ativo: 'Ativo' };
+const ST = { reservada: 'Reservada', usada: 'Usada', no_show: 'Não compareceu', cancelada: 'Cancelada' };
+// Operador e admin usam os painéis do Dashboard, entregues pelo mesmo servidor (o login vale lá).
+const PAINEL = { operador: '/operador/', admin: '/admin/' };
 let U, OFFLINE = false, F = { cidade: '', cat: '', q: '' };
 // Manda para o login guardando esta tela, para voltar a ela depois de entrar.
 const paraLogin = () => location.href = '/entrar.html?ir=' + encodeURIComponent(location.pathname + location.hash);
@@ -33,8 +34,8 @@ const ICONE = {
   logo: '<img src="/img/icone-branco.png" alt="">',
 };
 
-const NAV = { cliente: [['/', 'Ofertas'], ['/reservas', 'Minhas reservas']], operador: [['/', 'Vagas'], ['/passeios', 'Passeios'], ['/validar', 'Validar código']], admin: [] };
-const nav = h => { const n = NAV[U.perfil]; return n.length ? `<nav class="nav" aria-label="Seções do painel">${n.map(([r, t]) => `<a href="#${r}" ${h === r || (r === '/reservas' && h.startsWith('/voucher')) || (r === '/' && h.startsWith('/oferta')) ? 'aria-current="page"' : ''}>${t}</a>`).join('')}</nav>` : ''; };
+const NAV = [['/', 'Ofertas'], ['/reservas', 'Minhas reservas']];
+const nav = h => `<nav class="nav" aria-label="Seções do painel">${NAV.map(([r, t]) => `<a href="#${r}" ${h === r || (r === '/reservas' && h.startsWith('/voucher')) || (r === '/' && h.startsWith('/oferta')) ? 'aria-current="page"' : ''}>${t}</a>`).join('')}</nav>`;
 // Monta a tela: faixa verde (título, explicação e abas) + conteúdo branco. Textos já devem vir escapados.
 const tela = (h, titulo, lead, html) => {
   const n = h === null ? '' : nav(h);
@@ -100,8 +101,9 @@ async function vReservas() {
     (l.length ? `<div class="lista">${l.map(r => `<a href="#/voucher/${r.id}"><div class="principal"><strong>${esc(r.titulo)}</strong><p class="meta">${esc(r.cidade)}, ${quando(r.inicio)}</p></div><div class="fim"><span class="tag ${r.status}">${ST[r.status]}</span><div class="valor">${brl(r.total)}<small>${r.pessoas} pessoa(s)</small></div></div></a>`).join('')}</div>`
       : vazio('Você ainda não fez reservas.', 'Veja as <a href="#/">ofertas</a> e reserve uma vaga com desconto.')));
 }
-// QR code com só o código da reserva, desenhado aqui mesmo (js/qrcode.js): funciona sem internet.
-const qrSvg = t => { const q = qrcode(0, 'M'); q.addData(t); q.make(); return q.createSvgTag({ cellSize: 4, scalable: true }); };
+// QR code desenhado aqui mesmo (js/qrcode.js): funciona sem internet. Leva o voucher assinado (r.qr, ~300 letras);
+// correção 'L' deixa o desenho menor e mais fácil de ler na tela do celular.
+const qrSvg = t => { const q = qrcode(0, 'L'); q.addData(t); q.make(); return q.createSvgTag({ cellSize: 4, scalable: true }); };
 // Cartão que inclina seguindo o mouse ou o dedo, até 10° para cada lado, e cresce 5% (como o TiltCard da Spell UI).
 const inclinar = el => {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -112,7 +114,7 @@ const inclinar = el => {
 async function vVoucher(id) {
   const r = (await carregarReservas()).find(x => x.id === +id);
   if (!r) { location.hash = '#/reservas'; return; }
-  const qr = qrSvg(r.codigo), ativa = r.status === 'reservada';
+  const qr = qrSvg(r.qr || r.codigo), ativa = r.status === 'reservada', avaliar = r.status === 'usada' && !r.avaliada && !OFFLINE;
   tela('/voucher', 'Seu voucher', 'Mostre o QR code ou o código no local. Ele fica salvo neste aparelho e funciona sem internet.',
     `<a class="voltar" href="#/reservas">${ICONE.voltar}Minhas reservas</a>
     <div class="palco"><article class="voucher ${r.status}" id="vc">
@@ -122,12 +124,24 @@ async function vVoucher(id) {
       <dl class="v-dados"><div><dt>Em nome de</dt><dd>${esc(r.nome)}</dd></div><div><dt>Pessoas</dt><dd>${r.pessoas}</dd></div><div><dt>Total</dt><dd>${brl(r.total)}</dd></div></dl>
     </article></div>
     <dialog class="qr-grande" id="dq" aria-label="QR code da reserva">${qr}<div class="codigo">${esc(r.codigo)}</div><form method="dialog"><button class="btn">Fechar</button></form></dialog>
+    ${r.status === 'cancelada' && r.motivoCancelamento ? `<p class="aviso">Motivo do cancelamento: ${esc(r.motivoCancelamento)}</p>` : ''}
     <p class="meta">Preço com ${r.desconto}% de desconto, travado no momento da reserva. Toque no QR code para ampliar.</p>
     <div class="msg" id="m" role="alert"></div>
-    ${ativa && !OFFLINE ? '<button class="btn sec" id="c">Cancelar reserva</button>' : ''}`);
-  // Reserva usada ou cancelada fica cinza e parada.
+    ${ativa && !OFFLINE ? '<button class="btn sec" id="c">Cancelar reserva</button>' : ''}
+    ${avaliar ? `<button class="btn" id="av">Avaliar o passeio</button>
+    <form class="caixa avaliacao" id="fa" hidden><h2>Como foi o passeio?</h2>
+      <fieldset class="estrelas"><legend>Sua nota</legend>${[1, 2, 3, 4, 5].map(n => `<label><input class="sr" type="radio" name="nota" value="${n}" required><span aria-hidden="true">★</span><span class="sr">${n} de 5</span></label>`).join('')}</fieldset>
+      <div><label for="ac">Comentário (opcional)</label><textarea id="ac" rows="3" maxlength="600"></textarea></div>
+      <div class="msg" id="ma" role="alert"></div><button class="btn">Enviar avaliação</button></form>` : ''}`);
+  // Reserva usada, cancelada ou sem comparecimento fica cinza e parada.
   if (ativa) inclinar($('vc'));
   $('ampliar').onclick = () => $('dq').showModal();
+  if (avaliar) {
+    $('av').onclick = () => { $('av').hidden = true; $('fa').hidden = false; $('fa').querySelector('input').focus(); };
+    aoEnviar($('fa'), async () => {
+      try { await api(`/api/reservas/${r.id}/avaliar`, 'POST', { nota: +$('fa').nota.value, comentario: $('ac').value }); await carregarReservas(); await vVoucher(id); msgOk($('m'), 'Obrigado! Sua avaliação foi enviada ao parceiro.'); }
+      catch (x) { erro($('ma'), x); } });
+  }
   const c = $('c'); if (c) c.onclick = async () => { if (!confirm('Cancelar esta reserva?')) return; try { await api(`/api/reservas/${r.id}/cancelar`, 'POST'); await carregarReservas(); vVoucher(id); } catch (x) { erro($('m'), x); } };
 }
 
@@ -147,7 +161,7 @@ async function vPerfil() {
   // Histórico: o que já aconteceu (usadas, canceladas ou com horário passado). As ativas ficam em "Minhas reservas".
   const hist = l.filter(r => r.status !== 'reservada' || new Date(r.inicio) < Date.now());
   const feitos = l.filter(r => r.status === 'usada').length;
-  const economia = l.filter(r => r.status !== 'cancelada' && r.desconto > 0 && r.desconto < 100).reduce((s, r) => s + (r.precoUnit / (1 - r.desconto / 100) - r.precoUnit) * r.pessoas, 0);
+  const economia = l.filter(r => !['cancelada', 'no_show'].includes(r.status) && r.desconto > 0 && r.desconto < 100).reduce((s, r) => s + (r.precoUnit / (1 - r.desconto / 100) - r.precoUnit) * r.pessoas, 0);
   // O perfil é uma área à parte: sem as abas de ofertas e reservas. Chega-se a ele pela foto no topo ou pelo "Meu painel" da home.
   tela(null, 'Meu perfil', 'Seus dados, sua senha e os passeios que você já fez.', `<div class="perfil">
   <aside class="cartao-perfil">${avatar('avatar grande')}<h2>${esc(U.nome)}</h2><p class="meta">${esc(U.email)}</p>
@@ -187,76 +201,6 @@ async function vPerfil() {
     catch (x) { erro($('mx'), x); } });
 }
 
-/* ---------- OPERADOR ---------- */
-async function vVagas() {
-  const [of, ps] = await Promise.all([api('/api/operador/ofertas'), api('/api/operador/passeios')]), ok = ps.filter(p => p.status === 'aprovado');
-  tela('/', 'Publicar vagas', 'Avise as vagas que sobraram. O desconto sobe sozinho conforme o horário fica mais vazio.', `<div class="duas">
-  ${ok.length ? `<form class="caixa" id="f"><h2>Nova oferta</h2><div><label for="p">Passeio</label><select id="p">${ok.map(p => `<option value="${p.id}">${esc(p.titulo)}</option>`).join('')}</select></div>
-    <div><label for="i">Data e hora</label><input id="i" type="datetime-local" required></div><div><label for="v">Vagas disponíveis</label><input id="v" type="number" min="1" max="200" value="10" required></div>
-    <div><label for="d">Desconto máximo (%)</label><input id="d" type="number" min="0" max="90" value="50" required></div><div class="msg" id="m" role="alert"></div><button class="btn">Publicar vagas</button></form>`
-  : vazio('Você ainda não tem passeio aprovado.', 'Cadastre um na aba <a href="#/passeios">Passeios</a> e aguarde o administrador aprovar.')}
-  <section><h2>Suas ofertas</h2>${of.length ? `<ul class="lista">${of.map(o => `<li><div class="principal"><strong>${esc(o.titulo)}</strong><p class="meta">${quando(o.inicio)}</p>${new Date(o.inicio) < Date.now() ? '' : ocupacao(o)}</div><div class="fim">${new Date(o.inicio) < Date.now() ? '<span class="tag cancelada">Encerrada</span>' : o.desconto ? `<span class="agora"><b>${o.desconto}%</b> agora</span>` : '<span class="agora">Preço normal</span>'}</div></li>`).join('')}</ul>`
-    : vazio('Nenhuma oferta publicada ainda.', ok.length ? 'Preencha o formulário ao lado para avisar as vagas que sobraram.' : '')}</section></div>`);
-  const f = $('f'); if (f) aoEnviar(f, async () => { try { await api('/api/operador/ofertas', 'POST', { passeioId: $('p').value, inicio: new Date($('i').value).toISOString(), vagas: +$('v').value, descontoMax: +$('d').value }); vVagas(); } catch (x) { erro($('m'), x); } });
-}
-async function vPasseios() {
-  const l = await api('/api/operador/passeios');
-  tela('/passeios', 'Meus passeios', 'Novos passeios aparecem para os viajantes depois que o administrador aprova.', `<div class="duas"><form class="caixa" id="n"><h2>Novo passeio</h2>
-    <div><label for="t">Título</label><input id="t" required></div><div><label for="c">Cidade</label><input id="c" required></div>
-    <div><label for="k">Categoria</label><select id="k">${CATS.map(c => `<option>${c}</option>`).join('')}</select></div>
-    <div><label for="p">Preço normal (R$)</label><input id="p" type="number" min="0" step="0.01" required></div><div><label for="d">Descrição</label><textarea id="d" rows="3"></textarea></div>
-    <div class="msg" id="m" role="alert"></div><button class="btn">Enviar para aprovação</button></form>
-    <section><h2>Seus passeios</h2>${l.length ? `<ul class="lista">${l.map(p => `<li class="${p.status === 'pendente' ? 'pendente' : ''}"><div class="principal"><strong>${esc(p.titulo)}</strong><p class="meta">${esc(p.cidade)}, ${esc(p.categoria || 'Natureza')}</p></div><div class="fim"><span class="tag ${p.status}">${ST[p.status]}</span><div class="valor">${brl(p.preco)}</div><button class="btn peq perigo" data-del="${p.id}">Excluir</button></div></li>`).join('')}</ul>`
-      : vazio('Você ainda não cadastrou passeios.', 'Use o formulário ao lado. O administrador aprova antes de aparecer para os viajantes.')}</section></div>`);
-  aoEnviar($('n'), async () => { try { await api('/api/operador/passeios', 'POST', { titulo: $('t').value, cidade: $('c').value, categoria: $('k').value, preco: $('p').value, descricao: $('d').value }); vPasseios(); } catch (x) { erro($('m'), x); } });
-  app.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { try { await api('/api/operador/passeios/' + b.dataset.del, 'DELETE'); vPasseios(); } catch (x) { alert(x.message); } });
-}
-function vValidar() {
-  tela('/validar', 'Validar código', 'Leia o QR code ou digite o código que o turista mostrar no local. Cada código vale uma vez.',
-    `<div class="duas"><form class="caixa" id="v"><div><label for="c">Código da reserva</label><input id="c" class="codigo-input" autocomplete="off" autocapitalize="characters" required></div><div class="msg" id="m" role="alert"></div><button class="btn">Validar</button>
-    <button class="btn sec" type="button" id="ler" hidden>Ler QR code</button><video id="cam" class="camera" playsinline muted hidden></video></form><div id="res" aria-live="polite"></div></div>`);
-  aoEnviar($('v'), async () => { $('m').textContent = ''; $('res').innerHTML = '';
-    try { const r = await api('/api/operador/validar', 'POST', { codigo: $('c').value });
-      $('res').innerHTML = `<div class="resultado">${ICONE.ok}<div><strong>Código válido</strong><p>${r.pessoas} pessoa(s) em nome de <b>${esc(r.nome)}</b></p><p class="meta">${esc(r.titulo)}, ${quando(r.inicio)}</p></div></div>`; $('c').value = ''; }
-    catch (x) { erro($('m'), x); } });
-  lerQr();
-}
-// Lê o QR do voucher com a câmera de trás. O BarcodeDetector existe no Chrome do Android, mas não no iPhone
-// nem no Chrome do Windows: lá o botão nem aparece e o operador digita o código.
-function lerQr() {
-  const ler = $('ler'), cam = $('cam'); let fluxo = null;
-  if (!('BarcodeDetector' in window)) return;
-  BarcodeDetector.getSupportedFormats().then(f => { if (f.includes('qr_code')) ler.hidden = false; });
-  const parar = () => { if (fluxo) fluxo.getTracks().forEach(t => t.stop()); fluxo = null; cam.hidden = true; ler.textContent = 'Ler QR code'; };
-  ler.onclick = async () => {
-    if (fluxo) return parar();
-    $('m').textContent = '';
-    try { fluxo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); }
-    catch { return erro($('m'), new Error('Não foi possível abrir a câmera. Libere a câmera para este site ou digite o código.')); }
-    cam.srcObject = fluxo; cam.hidden = false; ler.textContent = 'Fechar câmera'; cam.play().catch(() => {}); // sem await: enquanto a imagem não chega, detect() só falha e tenta de novo
-    const detector = new BarcodeDetector({ formats: ['qr_code'] });
-    const procurar = async () => {
-      if (!fluxo) return;
-      if (!cam.isConnected) return parar(); // saiu da tela: desliga a câmera
-      const [qr] = await detector.detect(cam).catch(() => []);
-      // Achou: preenche o campo e valida pelo mesmo caminho do botão "Validar" (aoEnviar).
-      if (qr) { parar(); $('c').value = qr.rawValue.trim(); $('v').requestSubmit(); } else setTimeout(procurar, 250);
-    };
-    procurar();
-  };
-}
-
-/* ---------- ADMIN ---------- */
-async function vAdmin() {
-  const [us, ps] = await Promise.all([api('/api/admin/usuarios'), api('/api/admin/passeios')]);
-  const nu = us.filter(u => u.status === 'pendente').length, np = ps.filter(p => p.status === 'pendente').length;
-  tela(null, 'Painel do administrador', nu || np ? `${nu} operador(es) e ${np} passeio(s) aguardando aprovação.` : 'Nada aguardando aprovação.', `
-  <section class="secao"><h2>Usuários</h2><ul class="lista">${us.map(u => `<li class="${u.status === 'pendente' ? 'pendente' : ''}"><div class="principal"><strong>${esc(u.nome)}</strong><p class="meta">${esc(u.email)}, ${PAPEL[u.perfil]}</p></div><div class="fim"><span class="tag ${u.status}">${ST[u.status]}</span><div class="acoes">${u.status === 'pendente' ? `<button class="btn peq" data-u="${u.id}">Aprovar</button>` : ''}${u.perfil !== 'admin' ? `<button class="btn peq perigo" data-ru="${u.id}">Remover</button>` : ''}</div></div></li>`).join('')}</ul></section>
-  <section class="secao"><h2>Passeios</h2>${ps.length ? `<ul class="lista">${ps.map(p => `<li class="${p.status === 'pendente' ? 'pendente' : ''}"><div class="principal"><strong>${esc(p.titulo)}</strong><p class="meta">${esc(p.cidade)}, por ${esc(p.operador)}</p></div><div class="fim"><span class="tag ${p.status}">${ST[p.status]}</span><div class="valor">${brl(p.preco)}</div>${p.status === 'pendente' ? `<button class="btn peq" data-p="${p.id}">Aprovar</button>` : ''}</div></li>`).join('')}</ul>` : vazio('Nenhum passeio cadastrado ainda.')}</section>`);
-  const go = (sel, url, m) => app.querySelectorAll(sel).forEach(b => b.onclick = async () => { if (m === 'DELETE' && !confirm('Remover este usuário?')) return; await api(url(b), m); vAdmin(); });
-  go('[data-u]', b => `/api/admin/usuarios/${b.dataset.u}/aprovar`, 'POST'); go('[data-ru]', b => `/api/admin/usuarios/${b.dataset.ru}`, 'DELETE'); go('[data-p]', b => `/api/admin/passeios/${b.dataset.p}/aprovar`, 'POST');
-}
-
 /* ---------- ROTAS ---------- */
 async function rota() {
   // A home manda a busca no endereço: #/?busca=Nova%20Palma
@@ -265,8 +209,6 @@ async function rota() {
   // Só mostra o spinner se a tela demorar: com a internet rápida ele nem chega a piscar.
   const espera = setTimeout(() => app.innerHTML = CARREGANDO, 250);
   try {
-    if (U.perfil === 'admin') return await vAdmin();
-    if (U.perfil === 'operador') return await ({ '': vVagas, passeios: vPasseios, validar: vValidar }[a || ''] || vVagas)();
     if (OFFLINE && !['reservas', 'voucher'].includes(a)) return location.hash = '#/reservas';
     if (a === 'oferta') return await vOferta(id); if (a === 'reservas') return await vReservas(); if (a === 'voucher') return await vVoucher(id);
     if (a === 'perfil') return await vPerfil();
@@ -278,6 +220,7 @@ async function rota() {
   try { U = await api('/api/me'); localStorage.setItem('vm_user', JSON.stringify(U)); }
   catch (e) { if (e instanceof TypeError) { U = JSON.parse(localStorage.getItem('vm_user') || 'null'); OFFLINE = !!U; } }
   if (!U) { paraLogin(); return; }
+  if (PAINEL[U.perfil]) { location.replace(PAINEL[U.perfil]); return; }
   topo();
   addEventListener('hashchange', rota); rota();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');

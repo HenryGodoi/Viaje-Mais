@@ -6,8 +6,7 @@
 <meta name="theme-color" content="#0B132B">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon-192.png">
-<link rel="icon" href="/img/icone-marinho.png" media="(prefers-color-scheme: light)">
-<link rel="icon" href="/img/icone-branco.png" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/favicon.png" sizes="48x48" type="image/png">
 <title>Entrar — Viaje Mais</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -44,6 +43,30 @@
           <label><input type="radio" name="perfil" value="cliente" checked> Quero viajar</label>
           <label><input type="radio" name="perfil" value="operador"> Ofereço turismo</label>
         </div>
+        <div class="cad hidden"><div class="parceiro" id="parceiro" hidden>
+          <p class="nota">Opcional: adiante os dados do seu negócio. Dá para completar no painel depois da aprovação.</p>
+          <div class="campo"><input id="negocio" maxlength="80" autocomplete="organization" placeholder=" "><label for="negocio">Nome do negócio</label></div>
+          <div><label for="cidade">Cidade</label><select id="cidade"><option value="">Escolha depois</option>
+            <option>Agudo</option>
+            <option>Dona Francisca</option>
+            <option>Faxinal do Soturno</option>
+            <option>Ivorá</option>
+            <option>Nova Palma</option>
+            <option>Pinhal Grande</option>
+            <option>Restinga Sêca</option>
+            <option>São João do Polêsine</option>
+            <option>Silveira Martins</option>
+          </select></div>
+          <div><label for="categoria">Categoria</label><select id="categoria"><option value="">Escolha depois</option>
+            <option value="cantina">Cantina</option>
+            <option value="vinicola">Vinícola</option>
+            <option value="restaurante">Restaurante</option>
+            <option value="museu">Museu</option>
+            <option value="trilha">Trilha</option>
+            <option value="guia">Guia</option>
+            <option value="hospedagem">Hospedagem</option>
+          </select></div>
+        </div></div>
         <div class="msg" id="msg" role="alert"></div>
         <button class="btn" id="ok" type="submit">Entrar</button>
       </form>

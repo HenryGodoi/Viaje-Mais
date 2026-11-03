@@ -79,8 +79,8 @@ input:focus,textarea:focus,select:focus{border-color:var(--foco);outline:0}
 .app h2{font-size:26px;margin-bottom:16px}
 .meta{color:var(--muted);margin:0}
 .tag{display:inline-block;padding:3px 12px;border-radius:99px;font-size:13px;font-weight:700;background:var(--branco);color:var(--marinho)}
-.tag.pendente{background:var(--pendente)}.tag.reservada,.tag.aprovado,.tag.ativo{background:var(--ceu)}
-.tag.usada,.tag.cancelada,.oferta .tag,.sobre .tag{background:var(--aco);color:var(--branco)}
+.tag.reservada{background:var(--ceu)}
+.tag.usada,.tag.cancelada,.tag.no_show,.oferta .tag,.sobre .tag{background:var(--aco);color:var(--branco)}
 .aviso{background:var(--aviso);color:var(--marinho);border-radius:10px;padding:12px 14px;font-weight:600;margin:0}
 .voltar{display:inline-flex;align-items:center;gap:6px;margin-bottom:22px;font-weight:700;color:var(--realce);text-decoration:none}
 .voltar:hover{text-decoration:underline}
@@ -129,7 +129,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--foco);outline:0}
 .caixa h2{margin:0;font-size:22px}
 .caixa .total{font:700 22px var(--fonte-titulo);color:var(--texto)}
 .det .caixa{position:sticky;top:20px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
-.duas{display:grid;grid-template-columns:360px 1fr;gap:40px;align-items:start}
 
 /* listas (reservas, ofertas do operador, passeios, admin) */
 .lista{list-style:none;margin:0;padding:0;background:var(--superficie);border:1px solid var(--borda);border-radius:16px;overflow:hidden}
@@ -141,9 +140,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--foco);outline:0}
 .fim{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px 16px}
 .lista .valor{font:700 20px var(--fonte-titulo);color:var(--texto);text-align:right}
 .lista .valor small{display:block;font:600 14px var(--fonte-texto);color:var(--muted)}
-.lista .agora{font-weight:700;color:var(--muted);white-space:nowrap}.lista .agora b{font:700 22px var(--fonte-titulo);color:var(--realce)}
-.lista .pendente{background:color-mix(in srgb,var(--pendente) 14%,var(--superficie))}
-.acoes{display:flex;gap:8px}
 .secao{margin-bottom:44px}
 
 /* voucher: cartão que inclina com o mouse ou o dedo (como o TiltCard da Spell UI), com o QR code e o código embaixo.
@@ -165,7 +161,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--foco);outline:0}
 .v-qr svg,.qr-grande svg{display:block;width:100%;height:auto}
 .v-qr small{font-size:12px;font-weight:700;color:var(--muted)}
 .codigo{font:800 24px/1.1 ui-monospace,Consolas,monospace;letter-spacing:.12em;color:var(--texto)}
-.voucher.usada,.voucher.cancelada{filter:grayscale(.9);opacity:.75}
+.voucher.usada,.voucher.cancelada,.voucher.no_show{filter:grayscale(.9);opacity:.75}
 /* QR em tela cheia, para o vendedor ler com facilidade */
 .qr-grande{background:var(--branco);border:0;border-radius:20px;padding:20px;width:min(92vw,420px);text-align:center;display:grid;gap:14px}
 .qr-grande:not([open]){display:none}
@@ -193,13 +189,15 @@ input:disabled{background:var(--tinta);color:var(--muted)}
 .zona-perigo{border-color:color-mix(in srgb,var(--erro) 35%,var(--superficie))}
 .zona-perigo h2{color:var(--erro)}
 
-/* resultado da validação */
-.resultado{display:flex;gap:14px;align-items:flex-start;background:var(--fundo);border-radius:16px;padding:18px 20px;max-width:520px}
-.resultado svg{flex:none;color:var(--realce)}
-.resultado strong{display:block;font:700 20px var(--fonte-titulo);color:var(--texto)}
-.resultado p{margin:4px 0 0}
-.camera{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;background:var(--marinho)}
-.codigo-input{font:700 24px ui-monospace,Consolas,monospace!important;letter-spacing:.1em;text-transform:uppercase}
+/* avaliação do passeio: as estrelas acendem até a nota escolhida */
+.avaliacao{max-width:560px;margin-top:16px}
+.estrelas{border:0;padding:0;margin:0;display:flex;gap:4px}
+.estrelas legend{font-weight:700;font-size:15px;margin-bottom:6px;padding:0}
+.estrelas label{margin:0;cursor:pointer;font-size:36px;line-height:1;color:var(--muted)}
+.estrelas label:has(input:checked),.estrelas label:has(~ label input:checked){color:var(--laranja)}
+.estrelas label:has(input:focus-visible){outline:3px solid var(--foco);outline-offset:2px;border-radius:6px}
+/* cadastro de quem oferece turismo: negócio, cidade e categoria opcionais */
+.parceiro:not([hidden]){display:grid;gap:16px}
 
 @media(max-width:860px){
   .app .w{padding:0 20px}
@@ -210,7 +208,7 @@ input:disabled{background:var(--tinta);color:var(--muted)}
   .faixa h1{font-size:30px}.faixa p{font-size:16px}
   .nav{margin-top:20px}.nav a{padding:10px 16px}
   .app main.w{padding-top:24px}
-  .det,.duas,.perfil{grid-template-columns:minmax(0,1fr);gap:28px}
+  .det,.perfil{grid-template-columns:minmax(0,1fr);gap:28px}
   .cartao-perfil{position:static}
   .det .caixa{position:static}
   .lista>li,.lista>a{grid-template-columns:1fr}

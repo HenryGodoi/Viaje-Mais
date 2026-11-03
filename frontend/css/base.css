@@ -2,14 +2,14 @@
    Regra 60-30-10: 60% tons escuros (marinho, noite, aço), 30% tons claros (branco, céu), 10% destaque (laranja). */
 :root{
   --marinho:#0B132B;--noite:#1C2541;--aco:#3A506B;--ceu:#5BC0DE;--laranja:#D97706;--branco:#fff;
-  --perigo:#B3261E;--pendente:#FFE9A8;--aviso:#FFF4CC;
+  --perigo:#B3261E;--aviso:#FFF4CC;
   /* papéis: as telas usam estes nomes, e as áreas claras (abaixo) só trocam o valor deles */
   --fundo:var(--marinho);--superficie:var(--noite);--borda:var(--aco);--texto:var(--branco);
   --muted:color-mix(in srgb,var(--branco) 72%,var(--noite));--realce:var(--laranja);--foco:var(--ceu);--erro:#FF9C8F;
   --tinta:color-mix(in srgb,var(--branco) 10%,transparent);
   --fonte-texto:Nunito,sans-serif;--fonte-titulo:Fredoka,sans-serif;color-scheme:dark}
 /* áreas claras: os 30% da regra. Laranja puro no branco só serve em texto grande (3,2:1), por isso o --realce escurece. */
-.quadro,.busca,.cats,.como,.news,footer,.form,.selo,.resultado,.v-qr,.qr-grande{
+.quadro,.busca,.cats,.como,.news,footer,.form,.selo,.v-qr,.qr-grande{
   --fundo:var(--branco);--superficie:color-mix(in srgb,var(--marinho) 5%,var(--branco));
   --borda:color-mix(in srgb,var(--marinho) 18%,var(--branco));--texto:var(--marinho);--muted:var(--aco);
   --realce:color-mix(in srgb,var(--laranja) 55%,var(--marinho));--foco:var(--aco);--erro:var(--perigo);
