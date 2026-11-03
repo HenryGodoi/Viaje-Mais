@@ -10,3 +10,6 @@ node_modules/
 # Anotações locais (regras de trabalho e histórico de versões); ficam só no computador.
 CLAUDE.md
 /LEIA-ME.md
+# Planos e listas de tarefas entre os chats (backend, frontend e Dashboard).
+/PLANO-DASHBOARD.md
+/TAREFAS-*.md

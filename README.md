@@ -33,6 +33,8 @@ Para usar outra porta: `PORT=4000 node server.js` (no PowerShell: `$env:PORT=400
 
 Na primeira execução o servidor cria o arquivo `banco-de-dados/db.json` com dados de demonstração. Para começar do zero, feche o servidor e apague esse arquivo.
 
+Os painéis do operador e do administrador ficam em outro repositório (o Dashboard), e o mesmo servidor os entrega em http://localhost:3000/operador/ e http://localhost:3000/admin/. Por padrão ele procura a pasta `Dashboard` ao lado da pasta do site; para usar outra, defina `DASHBOARD_DIR`.
+
 ### Contas de teste
 
 | Perfil | E-mail | Senha |
@@ -43,13 +45,14 @@ Na primeira execução o servidor cria o arquivo `banco-de-dados/db.json` com da
 
 Anote as senhas quando o servidor criar o banco: elas não aparecem de novo. Para trocar a senha de qualquer conta, com o servidor desligado: `node backend/trocar-senha.js <e-mail> <nova senha>`.
 
-O operador de teste já tem o passeio aprovado "Rota dos fósseis".
+O operador de teste é o dono do "Parceiro Demo", que já tem passeios aprovados e saídas futuras.
 
 ### Roteiro para testar (fluxo do pitch)
 
-1. Entre como **operador**, abra a aba Vagas e publique uma oferta (data futura, número de vagas, desconto máximo).
-2. Em outra janela anônima, entre como **viajante**: veja a oferta, reserve e receba o código.
-3. Volte ao operador, abra **Validar código** e digite o código (no Chrome do Android, dá para ler o QR code com a câmera). Usar o mesmo código de novo é recusado.
+1. Entre como **operador** e abra o painel do parceiro (`/operador/`). Publique uma saída: data futura, número de vagas, preço e desconto máximo.
+2. Em outra janela anônima, entre como **viajante**: veja a oferta, reserve e receba o voucher.
+3. Volte ao operador e valide o código ou o QR do voucher. Usar o mesmo voucher de novo é recusado.
+4. Entre como **administrador** (`/admin/`) para ver as reservas, aprovar parceiros e passeios e acompanhar os repasses.
 
 Dois perfis ao mesmo tempo precisam de navegadores ou janelas anônimas separadas: o login vale para todas as abas do mesmo navegador.
 
@@ -60,10 +63,13 @@ Dois perfis ao mesmo tempo precisam de navegadores ou janelas anônimas separada
 - **Reserva** de 1 a 10 pessoas, com nome e telefone. O preço fica travado no momento da reserva. Se as vagas acabarem durante a reserva, o app avisa.
 - **Voucher** em forma de cartão que inclina, com QR code e o código de 8 caracteres embaixo, salvo no aparelho para abrir sem internet.
 - **Cancelamento** pelo viajante até 3 horas antes, com as vagas devolvidas à oferta.
-- **Validação do código** pelo operador no local, uma única vez: digitando ou lendo o QR com a câmera (Chrome do Android).
+- **Validação do voucher** pelo operador no local, uma única vez. O QR é assinado pelo servidor, então o celular do operador confere se ele é verdadeiro mesmo sem internet e sincroniza depois.
 - **Perfil do viajante:** foto, nome e telefone, troca de senha, exclusão da conta, histórico de reservas e quanto já economizou com os descontos.
-- **Três perfis:** viajante (ofertas, reservas, voucher), operador (passeios, vagas, validação) e administrador (aprova operadores e passeios).
-- **Segurança:** senhas com scrypt e sal aleatório, sessão em cookie HttpOnly, validação de tudo no servidor e texto escapado na tela.
+- **Três perfis:**
+  - **viajante:** ofertas, reservas, voucher e avaliação;
+  - **operador** (painel do parceiro): passeios, saídas, validação, equipe de validadores, avaliações e repasses;
+  - **administrador:** aprovações, parceiros, comissão, reservas, repasses e auditoria.
+- **Segurança:** senhas com scrypt e sal aleatório, sessão em cookie HttpOnly, validação de tudo no servidor, texto escapado na tela e dados pessoais mascarados nos painéis.
 - **PWA:** instalável e com cache offline das telas.
 
 ## Estrutura
@@ -79,14 +85,16 @@ frontend/                  o que o navegador baixa (cada arquivo é um endereço
   js/                      home.js, entrar.js, painel.js, qrcode.js (gerador de QR, MIT)
   sw.js                    service worker (cache offline)
 backend/                   o servidor
-  servidor.js              entrega o frontend ou chama a rota da API
-  config.js                constantes (porta, categorias, 2h de última hora, 3h para cancelar)
-  banco.js                 lê e grava banco-de-dados/db.json
+  servidor.js              entrega o frontend e os painéis, ou chama a rota da API
+  config.js                constantes (porta, categorias, cidades, comissão, 2h de última hora, 3h para cancelar)
+  banco.js                 lê e grava banco-de-dados/db.json (e converte o formato antigo)
+  modelo.js, migracao.js   formato dos registros e a conversão do banco antigo
   dados-demonstracao.js    contas de teste do primeiro uso
   seguranca.js             senhas e código do voucher
+  voucher.js               assinatura do QR do voucher
   sessoes.js               login por cookie
-  regras.js                cálculo do desconto
-  rotas/                   API: conta.js, perfil.js, passeios.js, ofertas.js
+  regras.js                desconto, vagas, cancelamento e repasse
+  rotas/                   API: conta.js, perfil.js, ofertas.js (site), operador.js e admin.js (painéis)
 banco-de-dados/            db.json (fora do GitHub) e a explicação da estrutura dos dados
 ```
 
@@ -106,9 +114,9 @@ Depois de atualizar o código, aperte **Ctrl + Shift + R** no navegador para nã
 
 ## Ainda não feito
 
-- Pagamento por Pix (hoje a reserva gera o QR code e o código para usar no local).
-- Ler o QR code no iPhone (hoje o operador digita o código).
+- Pagamento por Pix (hoje o turista paga no local; o repasse ao parceiro é marcado como pago à mão pelo administrador).
+- Envio de e-mails de verdade (hoje os avisos ficam gravados como "simulado").
 - Entrar com Google (o botão existe, mas falta configurar o Client ID).
 - Páginas por cidade e por roteiro.
-- Newsletter, avaliações, avisos de última hora por notificação ou WhatsApp, pacotes passeio + jantar e painel de comissão.
+- Newsletter, avisos de última hora por notificação ou WhatsApp e pacotes passeio + jantar.
 - Para produção: banco de dados de verdade, HTTPS e recuperação de senha.

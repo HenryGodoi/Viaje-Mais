@@ -2,7 +2,7 @@
 const fs = require('fs'), path = require('path');
 
 const PUB = path.join(__dirname, '..', 'frontend');
-const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp' };
+const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
 
 const send = (r, c, o) => { r.writeHead(c, { 'Content-Type': 'application/json' }); r.end(JSON.stringify(o)); };
 
@@ -15,7 +15,7 @@ const SEGURANCA = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
   'Referrer-Policy': 'same-origin',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; frame-src https://www.openstreetmap.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
 };
 const comSeguranca = (req, res) => {
   for (const [k, v] of Object.entries(SEGURANCA)) res.setHeader(k, v);
@@ -35,10 +35,11 @@ const lerCorpo = async req => {
   catch { return {}; }
 };
 
-const arquivo = (p, res) => {
-  const f = path.join(PUB, p === '/' ? 'index.html' : p);
-  // startsWith(PUB) impede pedir arquivos fora de frontend/ (ex.: /../banco-de-dados/db.json)
-  if (!f.startsWith(PUB) || !fs.existsSync(f) || !fs.statSync(f).isFile()) { res.writeHead(404); return res.end('Página não encontrada'); }
+// Entrega um arquivo de frontend/ (ou de outra pasta, como a dos painéis do Dashboard).
+const arquivo = (p, res, base = PUB) => {
+  const f = path.join(base, p.endsWith('/') ? p + 'index.html' : p);
+  // startsWith(base + separador) impede pedir arquivos fora da pasta (ex.: /../banco-de-dados/db.json)
+  if (!f.startsWith(base + path.sep) || !fs.existsSync(f) || !fs.statSync(f).isFile()) { res.writeHead(404); return res.end('Página não encontrada'); }
   res.writeHead(200, { 'Content-Type': TIPOS[path.extname(f)] || 'text/plain', 'Cache-Control': 'no-cache' });
   fs.createReadStream(f).pipe(res);
 };

@@ -44,11 +44,11 @@ module.exports = [
   // Só o viajante exclui a própria conta. Operador e admin têm passeios e aprovações ligados a eles.
   { metodo: 'DELETE', caminho: '/api/perfil', quem: 'cliente', fazer: ({ res, me, tok, b }) => {
     if (!check(String(b.senha || ''), me.senha)) return send(res, 400, { erro: 'Senha incorreta.' });
-    const ativas = db.reservas.filter(r => r.clienteId === me.id && r.status === 'reservada' && new Date(db.ofertas.find(o => o.id === r.ofertaId)?.inicio) > new Date());
+    const ativas = db.reservas.filter(r => r.turista_id === me.id && r.status === 'confirmada' && new Date(db.ofertas.find(o => o.id === r.oferta_id)?.inicio) > new Date());
     if (ativas.length) return send(res, 409, { erro: `Você tem ${ativas.length} reserva(s) ativa(s). Cancele ou use antes de excluir a conta.` });
-    // As reservas antigas ficam para o histórico do operador, mas sem os dados pessoais.
-    for (const r of db.reservas) if (r.clienteId === me.id) { r.clienteId = null; r.nome = 'Conta excluída'; r.telefone = ''; }
-    db.favoritos = db.favoritos.filter(f => f.u !== me.id);
+    // As reservas e avaliações antigas ficam para o histórico do parceiro, mas sem os dados pessoais.
+    for (const r of db.reservas) if (r.turista_id === me.id) Object.assign(r, { turista_id: null, nome: 'Conta excluída', telefone: '' });
+    for (const a of db.avaliacoes) if (a.turista_id === me.id) Object.assign(a, { turista_id: null, turista_nome: 'Conta excluída' });
     db.users = db.users.filter(u => u.id !== me.id); save();
     sairDosOutros(me.id); sair(res, tok);
     send(res, 200, { ok: true });
