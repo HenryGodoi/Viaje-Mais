@@ -6,8 +6,8 @@ const hhmm = d => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-di
 $('busca').onsubmit = e => { e.preventDefault(); const q = $('d').value.trim(); location.href = '/painel.html' + (q ? '#/?busca=' + encodeURIComponent(q) : ''); };
 // Newsletter ainda não tem back-end: avisa com honestidade em vez de fingir que cadastrou
 $('news').onsubmit = e => { e.preventDefault(); $('nmsg').textContent = 'Em breve! Ainda estamos montando essa parte.'; };
-// Se já estiver logado: "Meu painel" abre o perfil (viajante) e "Ver ofertas" abre a lista de vagas
-const logado = u => { $('entrar').textContent = 'Meu painel'; $('entrar').href = u?.perfil === 'cliente' ? '/painel.html#/perfil' : '/painel.html'; $('cta').textContent = 'Ver ofertas'; };
+// Se já estiver logado: "Meu painel" abre o perfil (viajante) ou o painel do Dashboard (operador e admin)
+const logado = u => { $('entrar').textContent = 'Meu painel'; $('entrar').href = { operador: '/operador/', admin: '/admin/' }[u?.perfil] || '/painel.html#/perfil'; $('cta').textContent = 'Ver ofertas'; };
 fetch('/api/me').then(r => r.ok ? r.json().then(logado) : localStorage.removeItem('vm_user'))
   .catch(() => { const u = JSON.parse(localStorage.getItem('vm_user') || 'null'); if (u) logado(u); });
 
