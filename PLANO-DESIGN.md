@@ -65,6 +65,8 @@ Cada componente novo vira classes em `frontend/css/app.css` (cores sempre por `v
 
 ## 4. Vendedor lendo o QR com a câmera
 
+**Saiu do site em 03/11/2026:** a validação passou para o painel do operador do Dashboard (`/operador/`). O texto abaixo fica como registro.
+
 **Decidido:** fazer agora (Henry, 29/10/2026), com digitar o código como reserva.
 
 **Onde entra:** tela "Validar" do operador (`frontend/js/painel.js`, onde fica o campo `codigo-input`).
