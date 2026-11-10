@@ -2,8 +2,9 @@
 
 PWA de turismo para a **Quarta Colônia (RS)**. Mostra as vagas que sobraram em passeios, museus, vinícolas e trilhas, com desconto: quanto mais vazio o horário, maior o desconto. O turista reserva pelo celular e recebe um código para usar no local, mesmo sem internet.
 
-Projeto campeão do **Ideathon 2026**. Próxima etapa: Startcup.
-Equipe do StartCUP: Henry Azambuja Godoi (desenvolvimento), Enzo Massao, Samuel Fritz, Richard Matge e Professora Vônia Engel.
+Projeto campeão do **Ideathon 2026** da Antonio Meneghetti Faculdade (out/2026). Próxima etapa: StartCUP.
+
+![Tela inicial do Viaje Mais](docs/tela-inicial.webp)
 
 ## Onde está cada coisa
 
@@ -19,6 +20,16 @@ Cada pasta tem o seu README explicando o que é cada arquivo. Na raiz ficam só 
 
 Passeios saem com vagas sobrando: o dono gasta o mesmo e ganha menos. Ao mesmo tempo, muitos turistas deixam de passear por achar caro. O Viaje Mais junta os dois lados, inspirado no app Primeira Mesa (descontos em restaurantes nos horários vazios), e reúne em um só lugar as atrações das nove cidades da região: Agudo, Dona Francisca, Faxinal do Soturno, Ivorá, Nova Palma, Pinhal Grande, Restinga Sêca, São João do Polêsine e Silveira Martins.
 
+## Como o projeto foi feito
+
+O Viaje Mais nasceu no Ideathon 2026 como projeto em equipe e segue para o StartCUP com esta equipe: Henry Azambuja Godoi (Desenvolvedor Principal), Enzo Massao, Samuel Fritz, Richard Matge e Professora Vônia Engel. Eu desenvolvi o protótipo funcional, com auxílio de IA.
+
+O protótipo é um PWA em HTML, CSS e JavaScript, com um back-end próprio em Node.js. O servidor usa só os módulos que já vêm com o Node, sem `npm install`, sem Vite nem Webpack e sem etapa de build: basta ter o Node instalado e rodar `node server.js`. Os dados ficam em um arquivo JSON, o que deixa a demonstração simples de ligar em qualquer computador; para produção, a troca por um banco de dados de verdade está na lista do que falta.
+
+O back-end cuida do login com senha criptografada (scrypt com sal aleatório), das sessões por cookie HttpOnly, do cálculo do desconto dinâmico, das reservas e da validação única dos vouchers. O QR do voucher é assinado pelo servidor, e assim o celular do operador consegue conferir se ele é verdadeiro mesmo sem internet. Por ser PWA, o site pode ser instalado no celular e guarda as telas para abrir offline.
+
+Os painéis do operador e do administrador ficam em um repositório separado, o Dashboard, que não é público.
+
 ## Como rodar
 
 Requisito: [Node.js](https://nodejs.org) 18 ou mais novo (usamos o 22 LTS). Não precisa instalar pacotes.
@@ -33,7 +44,7 @@ Para usar outra porta: `PORT=4000 node server.js` (no PowerShell: `$env:PORT=400
 
 Na primeira execução o servidor cria o arquivo `banco-de-dados/db.json` com dados de demonstração. Para começar do zero, feche o servidor e apague esse arquivo.
 
-Os painéis do operador e do administrador ficam em outro repositório (o Dashboard), e o mesmo servidor os entrega em http://localhost:3000/operador/ e http://localhost:3000/admin/. Por padrão ele procura a pasta `Dashboard` ao lado da pasta do site; para usar outra, defina `DASHBOARD_DIR`.
+Os painéis do operador e do administrador ficam no repositório do Dashboard, que não é público. Quem tem a pasta dele recebe os painéis do mesmo servidor, em http://localhost:3000/operador/ e http://localhost:3000/admin/. Por padrão ele procura a pasta `Dashboard` ao lado da pasta do site; para usar outra, defina `DASHBOARD_DIR`.
 
 ### Contas de teste
 
