@@ -1,6 +1,7 @@
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const hhmm = d => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const brl = n => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 // Buscar: leva para as ofertas já filtradas (o painel pede login antes, se ainda não houver sessão)
 $('busca').onsubmit = e => { e.preventDefault(); const q = $('d').value.trim(); location.href = '/painel.html' + (q ? '#/?busca=' + encodeURIComponent(q) : ''); };
@@ -23,6 +24,16 @@ const saida = o => `<li><a href="/painel.html#/oferta/${o.id}">
 fetch('/api/vitrine').then(r => r.json()).then(l => {
   $('saidas').innerHTML = l.length ? l.map(saida).join('') : '<li class="quadro-msg">Nenhuma saída com vaga agora. Os passeios avisam aqui quando sobra lugar.</li>';
 }).catch(() => { $('saidas').innerHTML = '<li class="quadro-msg">Sem conexão para mostrar as saídas agora.</li>'; });
+
+// Destaque pago no hero (decisão do Henry, 03/11/2026): um cartão com o selo de anúncio. Com mais de um parceiro
+// pagando, cada visita sorteia um, para todos aparecerem. O quadro "Próximas saídas" continua só por horário.
+fetch('/api/destaques').then(r => r.ok ? r.json() : []).then(l => {
+  if (!l.length) return; const d = l[Math.floor(Math.random() * l.length)];
+  $('destaque').innerHTML = `<a class="dest-hero" href="/painel.html#/oferta/${d.id}">${d.foto ? `<img src="${esc(d.foto)}" alt="">` : ''}
+    <span class="dest-tx"><span class="anuncio">Em destaque · anúncio</span><strong>${esc(d.titulo)}</strong><span>${esc(d.cidade)} · ${dia(d.inicio)}, ${hhmm(new Date(d.inicio))}</span></span>
+    <span class="dest-preco">${d.desconto ? `<s>${brl(d.precoNormal)}</s>` : ''}<b>${brl(d.precoFinal)}</b></span></a>`;
+  $('destaque').hidden = false;
+}).catch(() => {});
 
 // Hero: as fotos dos passeios se alternam ao fundo (parado para quem pede menos movimento)
 const fotos = document.querySelectorAll('.hero-fotos img');

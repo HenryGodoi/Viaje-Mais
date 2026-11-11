@@ -25,6 +25,14 @@ nav.m{display:flex;gap:36px;font-weight:600}
 .busca:focus-within{box-shadow:0 0 0 3px var(--ceu)}
 .busca input{flex:1 1 220px;min-height:48px;border:0;padding:0 16px;font:600 16px var(--fonte-texto);color:var(--texto);outline:none;border-radius:10px;background:none}
 .busca button{min-height:48px;background:var(--laranja);color:var(--marinho);border:0;border-radius:10px;padding:0 28px;font:700 16px var(--fonte-texto);cursor:pointer}
+/* destaque pago no hero: cartão claro com o selo de anúncio */
+.dest-hero{display:flex;align-items:center;gap:14px;margin-top:22px;max-width:620px;background:var(--branco);color:var(--marinho);border-radius:14px;padding:12px 16px 12px 12px}
+.dest-hero img{width:72px;height:72px;border-radius:10px;object-fit:cover;flex:none}
+.dest-tx{flex:1;min-width:0;display:grid;gap:2px}
+.dest-tx strong{font-family:var(--fonte-titulo);font-size:19px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dest-tx span:last-child{font-size:14px;color:var(--aco);font-weight:600}
+.anuncio{justify-self:start;font-size:12px;font-weight:800;color:var(--marinho);background:var(--laranja);padding:1px 8px;border-radius:99px}
+.dest-preco{text-align:right;flex:none}.dest-preco s{display:block;font-size:13px;color:var(--aco)}.dest-preco b{font:700 22px var(--fonte-titulo);color:color-mix(in srgb,var(--laranja) 55%,var(--marinho))}
 .operador{display:inline-block;margin-top:18px;font-weight:700;color:var(--muted);text-decoration:underline;text-underline-offset:4px}
 .operador:hover{color:var(--texto)}
 /* quadro de saídas: a parte "precisa" da home (cantos retos, números alinhados) */
