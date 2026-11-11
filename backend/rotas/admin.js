@@ -6,15 +6,15 @@ const { db, save } = require('../banco');
 const { hash, cod } = require('../seguranca');
 const { sairDosOutros } = require('../sessoes');
 const { send } = require('../http');
-const { CATEGORIAS, CIDADES, COMISSAO_PADRAO, DESTAQUE_MENSAL, HORAS_ULTIMA } = require('../config');
+const { CATEGORIAS, CIDADES, COMISSAO_PADRAO, DESTAQUE_MENSAL, HORAS_ULTIMA, HORAS_CANCELAR } = require('../config');
 const { iso, ymd, texto, ehCategoria, ehCidade, idCidade, mascTelefone, mascChave, mascEmail, novoParceiro } = require('../modelo');
-const { passeioDe, parceiroDe, ofertaDe, ativa, livres, cancelar, email: enviarEmail, emailDoTurista, auditar, repasses, falha, limparPasseio } = require('../regras');
+const { passeioDe, parceiroDe, ofertaDe, ativa, livres, cancelar, cancelarFuturas, destaqueAtivo, ROTULO_CANCELAMENTO, email: enviarEmail, emailDoTurista, auditar,
+  repasses, falha, limparPasseio } = require('../regras');
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/, DATA = /^\d{4}-\d{2}-\d{2}$/;
 const achar = (lista, id, nome) => lista.find(x => x.id === +id) || falha(`${nome} não encontrado(a).`, 404);
 const donoDe = pid => db.users.find(u => u.parceiro_id === pid && u.papel === 'dono');
 const nomeCidade = id => CIDADES.find(c => c.id === id)?.nome;
-const destaqueAtivo = (passeio_id, hoje = ymd(Date.now())) => db.destaques.find(d => d.passeio_id === passeio_id && d.inicio <= hoje && hoje <= d.fim);
 
 // Nomes de status e de tipo que o painel admin usa.
 const VOUCHER = { confirmada: 'emitido', validada: 'validado', no_show: 'expirado' }; // as canceladas: 'cancelado'
@@ -75,7 +75,8 @@ const decidir = (s, me, status, motivo = '') => Object.assign(s, { status, motiv
 const tituloSol = s => solicitacaoAdmin(s).titulo;
 const exigir = (v, msg, max = 600) => texto(v, max) || falha(msg);
 const reservaAberta = r => r.status === 'confirmada' || falha('Esta reserva não está mais em aberto.');
-const linhaDoTempo = (r, titulo, txt) => r.historico.push({ titulo, quando: iso(), texto: txt });
+// Linha do tempo da reserva. "Remarcada", "Voucher reemitido" e "Mensagem ao turista" também viram aviso para o turista (avisos, em regras.js).
+const linhaDoTempo = (r, titulo, txt, extra) => r.historico.push({ titulo, quando: iso(), texto: txt, ...extra });
 const quando = t => new Date(t).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
 // Cada ação recebe (dados enviados, admin logado). Erro de regra: falha('mensagem') → 400 com { erro }. Confere tudo antes de mudar.
@@ -137,13 +138,17 @@ const ACOES = {
     return { id: pa.id };
   },
   // Suspenso, os passeios saem do site sozinhos (o site só mostra parceiro ativo) e voltam na reativação.
-  suspenderParceiro({ id, motivo }, me) {
+  // As reservas já feitas continuam valendo (a suspensão pode ser só um documento atrasado). Se os passeios não vão
+  // acontecer, o admin manda cancelar_reservas: as futuras são canceladas e os turistas, avisados. O motivo é interno.
+  suspenderParceiro({ id, motivo, cancelar_reservas }, me) {
     const p = achar(db.parceiros, id, 'Parceiro');
     if (p.status !== 'ativo') falha('Só dá para suspender um parceiro ativo.');
     motivo = exigir(motivo, 'Informe o motivo.');
     Object.assign(p, { status: 'suspenso', motivo_status: motivo });
+    const canceladas = cancelar_reservas === true ? cancelarFuturas(r => r.parceiro_id === p.id) : 0;
     enviarEmail(p.email, 'Conta suspensa', motivo);
-    auditar(me, 'suspendeu parceiro', 'parceiro', p.id, motivo);
+    auditar(me, 'suspendeu parceiro', 'parceiro', p.id, motivo + (cancelar_reservas === true ? ` · ${canceladas} reserva(s) cancelada(s)` : ' · reservas mantidas'));
+    return { canceladas };
   },
   reativarParceiro({ id, motivo }, me) {
     const p = achar(db.parceiros, id, 'Parceiro');
@@ -205,6 +210,7 @@ const ACOES = {
     const destino = r ? emailDoTurista(r) : p.email;
     if (!destino) falha('Esta conta foi excluída: não há para quem enviar.');
     enviarEmail(destino, assunto, t);
+    if (r) linhaDoTempo(r, 'Mensagem ao turista', t, { assunto }); // aparece como aviso na reserva, no site
     auditar(me, r ? 'enviou mensagem ao turista' : 'enviou mensagem ao parceiro', r ? 'reserva' : 'parceiro', r ? r.id : p.id, assunto);
   },
   // O admin edita direto, sem solicitação (também troca a capa e remove fotos, mandando capa_id e fotos).
@@ -216,24 +222,28 @@ const ACOES = {
     Object.assign(ps, c);
     auditar(me, 'editou passeio', 'passeio', ps.id, 'Campos: ' + mudaram.join(', '));
   },
-  ocultarPasseio({ id, oculto }, me) {
+  // As reservas continuam valendo, a não ser com cancelar_reservas (o passeio não vai acontecer): igual ao do operador.
+  ocultarPasseio({ id, oculto, cancelar_reservas }, me) {
     const ps = achar(db.passeios, id, 'Passeio');
     if (ps.status !== 'ativo') falha('Só dá para ocultar ou mostrar um passeio aprovado.');
     ps.oculto = !!oculto;
-    auditar(me, ps.oculto ? 'ocultou passeio' : 'mostrou passeio', 'passeio', ps.id, ps.titulo);
+    const cancela = ps.oculto && cancelar_reservas === true, canceladas = cancela ? cancelarFuturas(r => r.passeio_id === ps.id) : 0;
+    auditar(me, ps.oculto ? 'ocultou passeio' : 'mostrou passeio', 'passeio', ps.id, ps.titulo + (cancela ? ` · ${canceladas} reserva(s) cancelada(s)` : ''));
+    return { canceladas };
   },
-  // Regra da devolução: total até 3 h antes ou quando o parceiro/clima cancela; nada no no-show (só depois do horário).
+  // Regra da devolução: total até o prazo da reserva (horas_cancelar) ou quando o parceiro/clima cancela; nada no no-show (só depois do horário).
+  // O turista lê só o nome do motivo; obs é a anotação interna da equipe (cancelado_obs).
   cancelarReserva({ id, motivo, obs }, me) {
-    const r = achar(db.reservas, id, 'Reserva'), o = ofertaDe(r.oferta_id), falta = Date.parse(o.inicio) - Date.now();
+    const r = achar(db.reservas, id, 'Reserva'), o = ofertaDe(r.oferta_id), falta = Date.parse(o.inicio) - Date.now(), horas = r.horas_cancelar ?? HORAS_CANCELAR;
     reservaAberta(r);
-    const ROT = { cancelada_turista: 'Pedido do turista', cancelada_parceiro: 'Cancelado pelo parceiro', cancelada_clima: 'Cancelado por clima', no_show: 'No-show' };
+    const ROT = { ...ROTULO_CANCELAMENTO, no_show: 'No-show' };
     if (!ROT[motivo]) falha('Escolha o motivo.');
     if (motivo === 'no_show' && falta > 0) falha('Só dá para marcar no-show depois do horário do passeio.');
-    const devolve = motivo === 'cancelada_parceiro' || motivo === 'cancelada_clima' || (motivo === 'cancelada_turista' && falta >= 3 * 36e5);
+    const devolve = motivo === 'cancelada_parceiro' || motivo === 'cancelada_clima' || (motivo === 'cancelada_turista' && falta >= horas * 36e5);
     if (motivo === 'no_show') r.status = 'no_show';
-    else cancelar(r, motivo, texto(obs) || ROT[motivo], devolve);
+    else { cancelar(r, motivo, ROT[motivo], devolve); r.cancelado_obs = texto(obs); }
     enviarEmail(emailDoTurista(r), `Reserva ${r.codigo}: ${ROT[motivo]}`, motivo === 'no_show' ? 'O passeio foi marcado como não comparecido.'
-      : devolve ? 'Sua reserva foi cancelada. Se você já pagou, a devolução é total.' : 'Sua reserva foi cancelada, sem devolução (faltavam menos de 3 horas).');
+      : devolve ? 'Sua reserva foi cancelada. Se você já pagou, a devolução é total.' : `Sua reserva foi cancelada, sem devolução (faltavam menos de ${horas} horas).`);
     auditar(me, motivo === 'no_show' ? 'marcou no-show' : 'cancelou reserva', 'reserva', r.id, `${r.codigo} · ${ROT[motivo]}${motivo === 'no_show' ? '' : devolve ? ' · com devolução' : ' · sem devolução'}`);
     return { devolve };
   },
@@ -247,7 +257,7 @@ const ACOES = {
     if (livres(novo) < r.pessoas) falha(`A nova saída não tem ${r.pessoas} vaga(s) livre(s).`);
     r.oferta_id = novo.id;
     const txt = `De ${quando(antes.inicio)} para ${quando(novo.inicio)}`;
-    linhaDoTempo(r, 'Remarcada', txt);
+    linhaDoTempo(r, 'Remarcada', txt, { de: antes.inicio, para: novo.inicio });
     enviarEmail(emailDoTurista(r), `Reserva ${r.codigo} remarcada`, `Nova data: ${quando(novo.inicio)}.`);
     auditar(me, 'remarcou reserva', 'reserva', r.id, `${r.codigo}: ${txt}`);
   },

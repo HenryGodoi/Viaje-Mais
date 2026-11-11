@@ -106,10 +106,13 @@ backend/                   o servidor
   sessoes.js               login por cookie
   regras.js                desconto, vagas, cancelamento e repasse
   rotas/                   API: conta.js, perfil.js, ofertas.js (site), operador.js e admin.js (painéis)
+  testes/                  testes automáticos da API
 banco-de-dados/            db.json (fora do GitHub) e a explicação da estrutura dos dados
 ```
 
 Sem dependências: o servidor usa só módulos nativos do Node.js e os dados ficam num arquivo JSON. O único código de terceiros é o `frontend/js/qrcode.js`, copiado sem npm. As rotas da API estão nos arquivos de `backend/rotas/`.
+
+Para conferir se a API continua funcionando depois de uma mudança, rode `node --test backend/testes/api.test.js`. Os testes usam um banco temporário e não mexem nos seus dados.
 
 ## Testar no celular
 

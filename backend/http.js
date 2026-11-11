@@ -24,11 +24,16 @@ const comSeguranca = (req, res) => {
 
 // Corpo do pedido em JSON. Acima de 400 KB (contados em bytes) dá erro 413;
 // a foto de perfil, já reduzida no navegador, fica bem abaixo disso.
-const LIMITE = 400 * 1024;
+const LIMITE = 400 * 1024, TETO = 10 * LIMITE;
 const lerCorpo = async req => {
   const pedacos = []; let bytes = 0;
-  // Lê até o fim mesmo passando do limite: parar no meio fecharia a conexão antes de dar a resposta 413.
-  for await (const c of req) { bytes += c.length; if (bytes <= LIMITE) pedacos.push(c); }
+  // Passando do limite, continua lendo (sem guardar) só para a pessoa receber a resposta 413: parar no meio fecharia
+  // a conexão antes dela. Acima do teto (4 MB) não é engano: corta a conexão, para ninguém ocupar o servidor com um envio sem fim.
+  for await (const c of req) {
+    bytes += c.length;
+    if (bytes <= LIMITE) pedacos.push(c);
+    else if (bytes > TETO) { req.destroy(); break; }
+  }
   if (bytes > LIMITE) throw Object.assign(new Error('O envio passou do tamanho permitido.'), { status: 413 });
   // Junta os bytes antes de virar texto: um acento cortado entre dois pedaços não se corrompe.
   try { const b = JSON.parse(Buffer.concat(pedacos).toString('utf8') || '{}'); return b && typeof b === 'object' ? b : {}; }

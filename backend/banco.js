@@ -4,7 +4,8 @@ const criarDemonstracao = require('./dados-demonstracao');
 const migrar = require('./migracao');
 const { garantir } = require('./modelo');
 
-const PASTA = path.join(__dirname, '..', 'banco-de-dados'), DB = path.join(PASTA, 'db.json');
+// BANCO_DIR: outra pasta para o banco (os testes usam uma pasta temporária, para nunca tocar no banco de verdade).
+const PASTA = process.env.BANCO_DIR || path.join(__dirname, '..', 'banco-de-dados'), DB = path.join(PASTA, 'db.json');
 fs.mkdirSync(PASTA, { recursive: true }); // garante a pasta, caso ela não exista nesta cópia do projeto
 let db;
 const save = () => fs.writeFileSync(DB, JSON.stringify(db, null, 1));

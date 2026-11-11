@@ -8,7 +8,7 @@ const { remover, sairDosOutros } = require('../sessoes');
 const { send } = require('../http');
 const { DESTAQUE_MENSAL } = require('../config');
 const { iso, r2, ymd, texto, ehCidade, ehCategoria, nomeCurto, mascTelefone, mascChave, novaSolicitacao, novoPasseio } = require('../modelo');
-const { passeioDe, parceiroDe, ofertaDe, ativa, ocupadas, resumoReserva, cancelar, email: enviarEmail, emailDoTurista, repasses,
+const { passeioDe, parceiroDe, ofertaDe, ativa, ocupadas, resumoReserva, cancelar, cancelarFuturas, email: enviarEmail, emailDoTurista, repasses,
   meiaNoite, somaDias, falha, limparPasseio, FOTO_URL } = require('../regras');
 const { chavePublica, conferir } = require('../voucher');
 
@@ -164,10 +164,13 @@ const ACOES = {
     else pedido('alteracao_passeio', p.id, { campos: mudou });
     return { aprovacao: true };
   },
-  ocultarPasseio({ id, oculto }, u) {
+  // Oculto, o passeio sai do site. As reservas já feitas continuam valendo, a não ser que o parceiro diga que o passeio
+  // não vai acontecer (cancelar_reservas): aí as futuras são canceladas e os turistas, avisados.
+  ocultarPasseio({ id, oculto, cancelar_reservas }, u) {
     const p = minha(db.passeios, id, u);
     if (p.status !== 'ativo') falha('Só dá para ocultar um passeio aprovado.');
     p.oculto = !!oculto;
+    return { canceladas: p.oculto && cancelar_reservas === true ? cancelarFuturas(r => r.passeio_id === p.id) : 0 };
   },
   duplicarPasseio({ id }, u, agora) {
     const p = minha(db.passeios, id, u), novo = db.seq++;

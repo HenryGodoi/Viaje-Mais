@@ -6,7 +6,7 @@ O servidor do Viaje Mais, em Node.js puro: só usa módulos que já vêm com o N
 
 1. `servidor.js` recebe o pedido. Se o endereço começa com `/admin/` ou `/operador/`, entrega o arquivo do painel (pasta do Dashboard). Se não começa com `/api/`, entrega o arquivo de `frontend/`.
 2. Se começa com `/api/`, procura a rota nos arquivos de `rotas/` e confere o login (`sessoes.js`) e se o perfil pode usar aquela rota.
-3. Lê o corpo do pedido (até 400 KB) e chama a função `fazer` da rota, que responde em JSON (a foto de perfil é a exceção: volta como imagem).
+3. Lê o corpo do pedido (até 400 KB; acima disso responde 413 e, passando de 4 MB, corta a conexão) e chama a função `fazer` da rota, que responde em JSON (a foto de perfil é a exceção: volta como imagem).
 4. Erro de regra de negócio (`falha('mensagem')`) vira `{ erro: 'mensagem' }` com o status certo (400, 403, 404). Um erro inesperado vira 500. O servidor não cai por causa de um pedido.
 
 ## Arquivos
@@ -14,7 +14,7 @@ O servidor do Viaje Mais, em Node.js puro: só usa módulos que já vêm com o N
 | Arquivo | O que faz |
 |---|---|
 | `servidor.js` | Liga tudo: entrega o frontend e os painéis, ou chama a rota da API |
-| `config.js` | Constantes: porta, pasta do Dashboard, categorias, cidades, comissão padrão (15%), destaque (R$ 80), 2h de "última hora", 3h para cancelar |
+| `config.js` | Constantes: porta, pasta do Dashboard, categorias, cidades, comissão padrão (15%), destaque (R$ 80), 2h de "última hora", prazos de cancelamento (3, 12, 24 ou 48 h; padrão 3) |
 | `http.js` | Responde JSON, lê o corpo do pedido, entrega arquivos e põe os cabeçalhos de segurança |
 | `sessoes.js` | Login por cookie. As sessões ficam no `db.json` (só o hash do cookie): reiniciar não desloga, e o painel mostra os aparelhos conectados |
 | `seguranca.js` | Hash das senhas (scrypt) e código do voucher |
@@ -30,12 +30,22 @@ O servidor do Viaje Mais, em Node.js puro: só usa módulos que já vêm com o N
 | `rotas/ofertas.js` | Site do turista: vitrine, ofertas, reservas, cancelamento e avaliação |
 | `rotas/operador.js` | Painel do operador (Dashboard): painel, ações, validação, lista do dia e sincronização |
 | `rotas/admin.js` | Painel do admin (Dashboard): painel, ações e dados pessoais |
+| `testes/api.test.js` | Testes automáticos da API (veja "Testes", abaixo) |
+
+## Testes
+
+```bash
+node --test backend/testes/api.test.js
+```
+
+Rode na raiz do projeto. Não precisa instalar nada: o comando de teste já vem com o Node. Os testes ligam um servidor de verdade numa porta livre, com um banco novo numa pasta temporária, e apagam tudo no fim. Eles **nunca tocam** no `banco-de-dados/db.json`. Rode antes de cada commit que mexa no backend; regra de negócio nova ganha um teste ali.
 
 ## Variáveis de ambiente (todas opcionais)
 
 | Variável | Para quê | Padrão |
 |---|---|---|
 | `PORT` | Porta do servidor | `3000` |
+| `BANCO_DIR` | Pasta do `db.json` e da chave do voucher (os testes usam uma pasta temporária) | `banco-de-dados/` |
 | `DASHBOARD_DIR` | Pasta do repositório do Dashboard | a pasta `Dashboard` ao lado da pasta do site |
 | `VOUCHER_CHAVE_PRIVADA` | Chave privada do voucher (JWK em JSON) | criada sozinha em `banco-de-dados/chave-voucher.json` |
 
@@ -69,16 +79,32 @@ Toda resposta de erro é `{ erro: 'mensagem' }`. Sem login: 401. Perfil errado: 
 
 | Rota | Quem | O que faz |
 |---|---|---|
-| `GET /api/vitrine` | público | As 4 próximas saídas com vaga (sem operador nem descrição) |
-| `GET /api/ofertas`, `GET /api/ofertas/:id` | logado | Saídas à venda: `id, passeioId, inicio, vagas, livres, descontoMax, titulo, cidade, categoria` (nome: "Vinícola"), `descricao, fotos, operador, precoNormal, desconto, precoFinal, ultimaHora` |
-| `POST /api/reservas` | viajante | `{ ofertaId, pessoas, nome, telefone }`. Trava o preço e a comissão do momento |
-| `GET /api/reservas` | viajante | As reservas da conta: `id, ofertaId, pessoas, nome, telefone, desconto, precoUnit, total, codigo, status, criada, usadaEm, inicio, titulo, cidade, operador, motivoCancelamento, avaliada, qr` |
-| `POST /api/reservas/:id/cancelar` | viajante | Até 3 horas antes |
+| `GET /api/vitrine` | público | As 4 próximas saídas com vaga, só por horário (sem operador nem descrição) |
+| `GET /api/destaques` | público | Os passeios com destaque pago ativo, para o hero da home: a próxima saída com vaga de cada um, com `id, passeioId, inicio, titulo, cidade, categoria, foto, livres, vagas, precoNormal, precoFinal, desconto, ultimaHora, nota, avaliacoes`. O valor pago não vai |
+| `GET /api/ofertas` | público | Saídas à venda, os destaques pagos primeiro e depois a mais cedo: `id, passeioId, inicio, vagas, livres, descontoMax, titulo, cidade, categoria` (nome: "Vinícola"), `descricao, fotos` (só a capa), `operador, precoNormal, desconto, precoFinal, ultimaHora, duracaoMin, acessivel, destaque, nota, avaliacoes` |
+| `GET /api/ofertas/:id` | público | A página da oferta: tudo da lista, com todas as `fotos`, mais `pontoEncontro, lat, lng, inclui, levar, idiomas` (listas), `acessibilidade, responsavel, horasCancelar, obsCancelamento, fechada` e `parceiro: { id, nome, foto, categoria, cidade }` |
+| `GET /api/passeios/:id/avaliacoes` | público | `{ nota, avaliacoes, lista: [{ id, nome, nota, comentario, quando, resposta }] }`. Só o primeiro nome; sem as removidas; mais novas primeiro |
+| `POST /api/reservas` | viajante | `{ ofertaId, pessoas, nome, telefone, observacoes? }`. Trava o preço, a comissão e o prazo de cancelamento do momento. `observacoes` é cortado em 300 caracteres |
+| `GET /api/reservas` | viajante | As reservas da conta: `id, ofertaId, pessoas, nome, telefone, desconto, precoUnit, total, codigo, status, criada, usadaEm, inicio, titulo, cidade, operador, motivoCancelamento, avaliada, qr, passeioId, duracaoMin, observacoes, pessoasChegaram, horasCancelar, obsCancelamento, pontoEncontro, lat, lng, telefoneParceiro, avisos` |
+| `POST /api/reservas/:id/cancelar` | viajante | Até o prazo da reserva (`horasCancelar` horas antes) |
 | `POST /api/reservas/:id/avaliar` | viajante | `{ nota: 1 a 5, comentario? }`. Só depois de validada, uma vez por reserva |
 
 Status da reserva no site: `reservada`, `usada`, `no_show` (não compareceu) e `cancelada`. O `qr` só vem na reservada: é o voucher assinado (`VM1.<dados>.<assinatura>`), e o código de 8 letras continua em `codigo`.
 
-Uma saída aparece no site quando ela está ativa, o passeio está aprovado e visível, o parceiro está ativo, o horário é futuro e ainda há vaga.
+Uma saída aparece na lista quando ela está ativa, o passeio está aprovado e visível, o parceiro está ativo, o horário é futuro e ainda há vaga.
+
+Detalhes do formato do site:
+
+- **Vazio é `null`.** Texto vazio e lista vazia vêm como `null`, nunca `''` ou `[]`. A exceção é `avisos`, que é sempre uma lista.
+- **`GET /api/ofertas/:id` devolve também o que não está mais à venda.** A saída esgotada (`livres: 0`) ou que já começou vem com desconto 0, e a tela não mostra o formulário. A que saiu do ar (pausada, cancelada, passeio oculto ou parceiro suspenso) vem com `fechada: true`, mas só para quem está logado e tem reserva nela; para os outros é 404.
+- **Prazo de cancelamento.** Cada passeio tem o seu (`horas_cancelar`: 3, 12, 24 ou 48). A reserva guarda o prazo que valia quando foi feita, e é esse que o servidor segue. `obsCancelamento` é o texto livre do parceiro.
+- **`telefoneParceiro`** vem na reserva ativa e, na usada ou cancelada, até o fim do dia do passeio. Depois é `null`.
+- **`avisos`** é o que o parceiro ou o Viaje Mais mudou na reserva: `[{ id, tipo, texto, quando }]`, do mais antigo ao mais novo. O `id` não muda, para o aparelho guardar quais a pessoa já viu. Tipos:
+  - `cancelada` (pelo parceiro, pelo admin ou pelo clima) e `saida_cancelada` (a saída inteira): o texto traz o motivo e "Não há nada a pagar" (ou o valor devolvido, quando houver Pix);
+  - `remarcada`, com `deData` e `paraData`;
+  - `voucher_reemitido`;
+  - `mensagem`, com `assunto`.
+- **Nunca vão para o site:** comissão, repasses, Pix, valor do destaque, equipe, auditoria, denúncias e a anotação interna do admin no cancelamento (`cancelado_obs`).
 
 ### Painel do operador (formato do Dashboard, em snake_case)
 
@@ -98,6 +124,9 @@ Ações do operador: `publicarOfertas`, `editarOferta`, `cancelarOferta`, `cance
 - `trocarSenha` pede `{ atual, nova, confirma }`.
 - Não há serviço de e-mail ainda. Por isso `convidar` devolve `{ senha_provisoria }` para o dono repassar. `trocarPix` vai direto para o admin aprovar, sem o link de confirmação por e-mail.
 - O validador só pode usar `registrarRecusa`, `ajustarChegada`, `trocarSenha` e `encerrarSessao`. Nas outras ações recebe 403.
+- `salvarPasseio` aceita também `horas_cancelar` (3, 12, 24 ou 48: o prazo do cancelamento grátis) e `acessivel` (`true`/`false`: o selo de acessibilidade no site). Os dois mudam na hora, sem aprovação, como `regras_cancelamento` (o texto livre de observações). O prazo novo vale para as reservas feitas dali em diante.
+- `ocultarPasseio { id, oculto, cancelar_reservas? }`: oculto, o passeio sai do site e as reservas já feitas continuam valendo. Com `cancelar_reservas: true` (o passeio não vai acontecer), as reservas confirmadas das saídas futuras são canceladas e os turistas, avisados. Responde `{ canceladas: n }`.
+- A reserva traz `observacoes` (o que o turista escreveu ao reservar), também no `validar` e no `dia`.
 
 ### Painel do admin
 
@@ -117,15 +146,15 @@ As ações do admin são estas:
 | `recusarSolicitacao` | `{ id, motivo }` |
 | `pedirAjuste` | `{ id, mensagem }` |
 | `salvarParceiro` | `{ id?, campos }`. Sem `id`, cadastra um parceiro novo |
-| `suspenderParceiro` | `{ id, motivo }` |
+| `suspenderParceiro` | `{ id, motivo, cancelar_reservas? }`. As reservas já feitas continuam valendo; com `cancelar_reservas: true`, as futuras são canceladas e os turistas, avisados. Responde `{ canceladas: n }`. O `motivo` é interno |
 | `reativarParceiro` | `{ id, motivo }` |
 | `mudarComissao` | `{ id, pct, motivo }`, com `pct` em porcentagem |
 | `destacarPasseio` | `{ id, inicio, fim }` ou `{ id, desligar: true }` |
 | `redefinirAcesso` | `{ id }` (o id do parceiro). Devolve `{ email, senha_provisoria }` e cria a conta do dono se ela ainda não existir |
-| `enviarMensagem` | `{ para: 'parceiro' \| 'turista', id, assunto?, texto }` |
-| `editarPasseio` | `{ id, campos }` |
-| `ocultarPasseio` | `{ id, oculto }` |
-| `cancelarReserva` | `{ id, motivo, obs? }`, com `motivo` = `cancelada_turista`, `cancelada_parceiro`, `cancelada_clima` ou `no_show` |
+| `enviarMensagem` | `{ para: 'parceiro' \| 'turista', id, assunto?, texto }`. A mensagem ao turista (`id` da reserva) aparece também como aviso na reserva, no site |
+| `editarPasseio` | `{ id, campos }`. Aceita também `horas_cancelar` e `acessivel` |
+| `ocultarPasseio` | `{ id, oculto, cancelar_reservas? }`, igual ao do operador. Responde `{ canceladas: n }` |
+| `cancelarReserva` | `{ id, motivo, obs? }`, com `motivo` = `cancelada_turista`, `cancelada_parceiro`, `cancelada_clima` ou `no_show`. O turista lê só o nome do motivo; `obs` é a anotação interna (`cancelado_obs` na reserva) |
 | `remarcarReserva` | `{ id, oferta_id }` |
 | `reenviarVoucher` | `{ id }` |
 | `reemitirVoucher` | `{ id }`. Gera um código novo, e o código e o QR antigos deixam de valer |

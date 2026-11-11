@@ -22,5 +22,6 @@ module.exports = {
   COMISSAO_PADRAO: 0.15, // 15% de cada reserva; o admin pode mudar por parceiro
   DESTAQUE_MENSAL: 80,   // destaque pago: R$ 80 por 30 dias, descontado do repasse
   HORAS_ULTIMA: 2,       // faltando 2h ou menos: desconto máximo (última hora)
-  HORAS_CANCELAR: 3,     // o viajante pode cancelar até 3h antes
+  HORAS_CANCELAR: 3,     // o viajante pode cancelar até 3h antes (padrão; cada passeio escolhe em OPCOES_CANCELAR)
+  OPCOES_CANCELAR: [3, 12, 24, 48], // horas de antecedência que o parceiro pode escolher para o cancelamento grátis
 };
