@@ -65,8 +65,11 @@ test('a reserva guarda as observações e o prazo de cancelamento que valia quan
   const a = ok(await turista('POST', '/api/reservas', { ofertaId: o.id, pessoas: 1, nome: 'Ana Teste', telefone: '(55) 99999-0000', observacoes: 'x'.repeat(400) }), 201);
   assert.deepEqual([a.observacoes.length, a.horasCancelar, a.telefoneParceiro, a.passeioId], [300, 3, '(55) 3222-0000', o.passeioId]);
   assert.deepEqual(a.avisos, []);
-  const noPainel = ok(await operador('GET', '/api/operador/painel')).reservas.find(r => r.id === a.id);
-  assert.equal(noPainel.observacoes.length, 300);
+  const painel = ok(await operador('GET', '/api/operador/painel'));
+  assert.equal(painel.reservas.find(r => r.id === a.id).observacoes.length, 300);
+  // Passeio sem foto: mandar "sem capa" não é uma mudança que pede aprovação do admin.
+  const semFoto = painel.passeios.find(p => !p.fotos.length);
+  assert.equal(ok(await acaoOperador('salvarPasseio', { id: semFoto.id, campos: { capa_id: null, levar: 'Tênis' } })).aprovacao, false);
 
   // O parceiro muda o prazo para 48 h: vale para as reservas novas, não para a que já existe.
   assert.equal((await acaoOperador('salvarPasseio', { id: o.passeioId, campos: { horas_cancelar: 7 } })).status, 400);
@@ -103,9 +106,13 @@ test('o que o admin muda na reserva vira aviso para o turista, e a anotação in
   r = await minhaReserva(c.id);
   const aviso = r.avisos.at(-1);
   assert.deepEqual([r.status, r.motivoCancelamento, aviso.tipo], ['cancelada', 'Cancelado por clima', 'cancelada']);
-  assert.match(aviso.texto, /clima\. Não há nada a pagar\.$/);
+  assert.equal(aviso.texto, 'Sua reserva foi cancelada por causa do clima. Não há nada a pagar.');
   assert.ok(!JSON.stringify(r).includes('Anotação interna'), 'o turista não lê a anotação do admin');
   assert.equal(ok(await admin('GET', '/api/admin/painel')).reservas.find(x => x.id === c.id).cancelado_obs, 'Anotação interna da equipe');
+
+  const p = await reservar(outra.id); // o aviso diz quem cancelou
+  ok(await acaoAdmin('cancelarReserva', { id: p.id, motivo: 'cancelada_parceiro' }));
+  assert.equal((await minhaReserva(p.id)).avisos[0].texto, 'Sua reserva foi cancelada pelo parceiro. Não há nada a pagar.');
 });
 
 test('passeio que sai do ar: as reservas só são canceladas quando pedem; senão continuam valendo', async () => {

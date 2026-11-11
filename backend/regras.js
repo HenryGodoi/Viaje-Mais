@@ -54,19 +54,22 @@ const detalhe = o => {
 // (o cancelamento e a linha do tempo), então o id de cada aviso não muda e o aparelho sabe quais a pessoa já viu.
 const AVISO = { 'Remarcada': 'remarcada', 'Voucher reemitido': 'voucher_reemitido', 'Mensagem ao turista': 'mensagem' };
 const ROTULO_CANCELAMENTO = { cancelada_turista: 'Pedido do turista', cancelada_parceiro: 'Cancelado pelo parceiro', cancelada_clima: 'Cancelado por clima' };
+const MOTIVO_FORA_DO_AR = 'O passeio não está mais disponível'; // o que o turista lê quando o passeio sai do ar com cancelar_reservas
 const avisos = r => {
   const l = [];
   r.historico.forEach((h, i) => {
     const tipo = AVISO[h.titulo], base = { id: `h${r.id}_${i}`, tipo, quando: h.quando };
-    if (tipo === 'remarcada') l.push({ ...base, texto: `Sua reserva foi remarcada. ${h.texto}.`, deData: h.de || null, paraData: h.para || null });
-    else if (tipo === 'voucher_reemitido') l.push({ ...base, texto: 'Seu voucher ganhou um código novo. O código e o QR antigos não valem mais.' });
+    // Na remarcação, as datas vão em deData e paraData para a tela escrever do jeito dela; as antigas, sem esses campos, levam as datas no texto.
+    if (tipo === 'remarcada') l.push({ ...base, texto: h.de && h.para ? 'Sua reserva foi remarcada.' : `Sua reserva foi remarcada. ${h.texto}.`, deData: h.de || null, paraData: h.para || null });
+    else if (tipo === 'voucher_reemitido') l.push({ ...base, texto: 'Seu voucher ganhou um código novo.' });
     else if (tipo) l.push({ ...base, texto: h.texto, assunto: h.assunto || null });
   });
   if (r.status === 'cancelada_parceiro' || r.status === 'cancelada_clima') {
-    const saida = ofertaDe(r.oferta_id)?.status === 'cancelada';
+    const saida = ofertaDe(r.oferta_id)?.status === 'cancelada', foraDoAr = r.cancelado_motivo === MOTIVO_FORA_DO_AR;
     // O nome fixo do motivo ("Cancelado por clima") já está dito na frase; só o texto que alguém escreveu entra depois dos dois-pontos.
     const motivo = Object.values(ROTULO_CANCELAMENTO).includes(r.cancelado_motivo) ? '' : String(r.cancelado_motivo || '').replace(/[.\s]+$/, '');
-    const frase = saida ? 'Esta saída foi cancelada' : r.status === 'cancelada_clima' ? 'Sua reserva foi cancelada por causa do clima' : 'Sua reserva foi cancelada';
+    const frase = saida ? 'Esta saída foi cancelada' : r.status === 'cancelada_clima' ? 'Sua reserva foi cancelada por causa do clima'
+      : foraDoAr ? 'Sua reserva foi cancelada' : 'Sua reserva foi cancelada pelo parceiro';
     const dinheiro = r.status_pagamento === 'estornado' ? `O valor de R$ ${r.reembolso.toFixed(2).replace('.', ',')} vai ser devolvido.` : 'Não há nada a pagar.';
     l.push({ id: `c${r.id}`, tipo: saida ? 'saida_cancelada' : 'cancelada', quando: r.cancelado_em, texto: `${frase}${motivo ? ': ' + motivo : ''}. ${dinheiro}` });
   }
@@ -122,7 +125,7 @@ const cancelarFuturas = filtro => {
   for (const r of db.reservas) {
     const o = ofertaDe(r.oferta_id);
     if (r.status !== 'confirmada' || !filtro(r) || !(falta(o) > 0)) continue;
-    cancelar(r, 'cancelada_parceiro', 'O passeio não está mais disponível', true);
+    cancelar(r, 'cancelada_parceiro', MOTIVO_FORA_DO_AR, true);
     email(emailDoTurista(r), 'Seu passeio foi cancelado', `${passeioDe(r.passeio_id)?.titulo} em ${new Date(o.inicio).toLocaleString('pt-BR')} foi cancelado. Se você já pagou, a devolução é total.`);
     n++;
   }
@@ -175,6 +178,7 @@ const limparPasseio = campos => {
     if (v === undefined) continue;
     c[k] = num.includes(k) ? (v === '' || v === null ? null : +v) : k === 'fotos' ? v : k === 'acessivel' ? v === true || v === 'true' : texto(v, k === 'descricao' ? 2000 : 300);
   }
+  if (c.capa_id === '') c.capa_id = null; // passeio sem foto: "sem capa" é sempre null, para não parecer uma mudança que pede aprovação
   if (c.horas_cancelar !== undefined && !OPCOES_CANCELAR.includes(c.horas_cancelar)) falha(`Escolha ${OPCOES_CANCELAR.join(', ')} horas para o cancelamento grátis.`);
   if (c.titulo !== undefined && c.titulo.length < 3) falha('Dê um nome ao passeio.');
   if (c.categoria !== undefined && !ehCategoria(c.categoria)) falha('Escolha uma categoria da lista: ' + CATEGORIAS.map(x => x[1]).join(', ') + '.');
