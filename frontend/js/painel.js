@@ -41,7 +41,7 @@ const tela = (h, titulo, lead, html) => {
   const n = h === null ? '' : nav(h);
   $('faixa-w').innerHTML = `<h1>${titulo}</h1>${lead ? `<p>${lead}</p>` : ''}${n}`;
   $('faixa').classList.toggle('sem-abas', !n);
-  app.innerHTML = html; document.title = titulo.replace(/<[^>]*>/g, '') + ' · Viaje Mais';
+  app.innerHTML = html; document.title = 'Viaje Mais Experiências - ' + titulo.replace(/<[^>]*>/g, '');
 };
 const vazio = (t, d = '') => `<div class="vazio"><strong>${t}</strong>${d ? `<p>${d}</p>` : ''}</div>`;
 // Foto de perfil ou a inicial do nome. "v" muda a cada troca para o navegador não mostrar a foto antiga.
