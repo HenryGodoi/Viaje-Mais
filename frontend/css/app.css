@@ -5,6 +5,7 @@ button{font:inherit;cursor:pointer}
 :focus-visible{outline:3px solid var(--foco);outline-offset:2px}
 .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:28px}
 .btn{border:0;border-radius:10px;padding:14px 22px;font-weight:700;font-size:16px;background:var(--laranja);color:var(--marinho)}
+a.btn:not([hidden]){text-decoration:none;display:inline-block;text-align:center}
 .btn.sec{background:none;color:var(--texto);border:2px solid var(--borda)}
 .btn.peq{padding:8px 14px;font-size:14px}.btn.perigo{background:var(--perigo);color:var(--texto)}
 .btn:disabled{opacity:.6;cursor:progress}
@@ -81,6 +82,11 @@ input:focus,textarea:focus,select:focus{border-color:var(--foco);outline:0}
 .tag{display:inline-block;padding:3px 12px;border-radius:99px;font-size:13px;font-weight:700;background:var(--branco);color:var(--marinho)}
 .tag.reservada{background:var(--ceu)}
 .tag.usada,.tag.cancelada,.tag.no_show,.oferta .tag,.sobre .tag{background:var(--aco);color:var(--branco)}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+/* "Destaque" é pago pelo parceiro, por isso o selo diz anúncio; "Acessível" vem do cadastro do passeio */
+.tag.anuncio,.tag.mudou{background:var(--laranja)!important;color:var(--marinho)!important}
+.tag.acesso{background:var(--ceu)!important;color:var(--marinho)!important}
+.estrela{margin:0;font-weight:800;color:var(--laranja)}.estrela small{color:var(--muted);font-weight:600}
 .aviso{background:var(--aviso);color:var(--marinho);border-radius:10px;padding:12px 14px;font-weight:600;margin:0}
 .voltar{display:inline-flex;align-items:center;gap:6px;margin-bottom:22px;font-weight:700;color:var(--realce);text-decoration:none}
 .voltar:hover{text-decoration:underline}
@@ -123,6 +129,15 @@ input:focus,textarea:focus,select:focus{border-color:var(--foco);outline:0}
 .resumo .preco strong{font-size:32px}
 .nota{margin:0;color:var(--muted);font-size:15px}
 .sobre p{margin:0 0 12px;max-width:640px}
+.sobre{margin-bottom:32px}
+/* "O que saber": detalhes do passeio que o operador preenche no painel */
+.saber{margin-bottom:32px}.saber dl{margin:0;display:grid;gap:14px;max-width:640px}
+.saber dt{font-size:13px;color:var(--muted);font-weight:700}.saber dd{margin:2px 0 0}
+.saber ul{margin:0;padding-left:18px}.saber a,.regra a,.avisos a{color:var(--realce);font-weight:700}
+.sobre-parceiro{display:flex;gap:14px;align-items:center;border:1px solid var(--borda);border-radius:16px;padding:16px;max-width:640px;background:var(--superficie)}
+.sobre-parceiro img,.sobre-parceiro .avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;font-size:24px}
+.sobre-parceiro strong{font-size:17px}
+.regra{margin:0;font-size:15px}.regra strong{display:block}.regra .nota{display:block;margin-top:4px}
 
 /* caixas de formulário */
 .caixa{display:grid;gap:16px;border:1px solid var(--borda);border-radius:16px;padding:24px;background:var(--superficie)}
@@ -162,6 +177,13 @@ input:focus,textarea:focus,select:focus{border-color:var(--foco);outline:0}
 .v-qr small{font-size:12px;font-weight:700;color:var(--muted)}
 .codigo{font:800 24px/1.1 ui-monospace,Consolas,monospace;letter-spacing:.12em;color:var(--texto)}
 .voucher.usada,.voucher.cancelada,.voucher.no_show{filter:grayscale(.9);opacity:.75}
+/* avisos da reserva (cancelada, remarcada, voucher novo, mensagem); o não lido ganha a borda laranja */
+.avisos{display:grid;gap:10px;margin:0 0 22px;max-width:600px}.avisos h2{margin:0;font-size:20px}
+.avisos .aviso.novo{box-shadow:0 0 0 3px var(--laranja)}
+.avisos time{display:block;font-size:13px;font-weight:600;opacity:.75;margin-top:4px}
+.acoes-voucher{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.acoes-voucher:empty{display:none}
+.app .regra{margin:0 0 10px}
 /* QR em tela cheia, para o vendedor ler com facilidade */
 .qr-grande{background:var(--branco);border:0;border-radius:20px;padding:20px;width:min(92vw,420px);text-align:center;display:grid;gap:14px}
 .qr-grande:not([open]){display:none}
@@ -177,7 +199,8 @@ input:focus,textarea:focus,select:focus{border-color:var(--foco);outline:0}
 .avatar.grande{width:112px;height:112px;font-size:44px;border-width:3px}
 .perfil{display:grid;grid-template-columns:300px 1fr;gap:40px;align-items:start}
 .cartao-perfil{background:var(--superficie);border:1px solid var(--borda);border-radius:16px;padding:28px 24px;display:grid;justify-items:center;gap:10px;text-align:center;position:sticky;top:20px}
-.cartao-perfil h2{margin:6px 0 0;font-size:24px}
+.cartao-perfil h2{margin:6px 0 0;font-size:24px;overflow-wrap:anywhere;max-width:100%}
+.app #nome{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cartao-perfil label.btn{margin:8px 0 0;cursor:pointer}
 .link{background:none;border:0;padding:0;color:var(--muted);font-weight:700;text-decoration:underline;text-underline-offset:3px}
 .numeros{margin:14px 0 0;padding-top:16px;border-top:1px solid var(--borda);width:100%;display:grid;grid-template-columns:1fr 1fr;gap:12px}
