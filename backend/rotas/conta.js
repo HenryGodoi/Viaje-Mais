@@ -24,8 +24,10 @@ module.exports = [
   { metodo: 'POST', caminho: '/api/cadastro', fazer: ({ res, b }) => {
     const email = String(b.email || '').trim().toLowerCase();
     if (!b.nome || String(b.nome).trim().length < 2) return send(res, 400, { erro: 'Informe seu nome completo.' });
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return send(res, 400, { erro: 'E-mail inválido.' });
+    if (String(b.nome).trim().length > 80) return send(res, 400, { erro: 'O nome pode ter até 80 caracteres.' });
+    if (email.length > 120 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return send(res, 400, { erro: 'E-mail inválido.' });
     if (String(b.senha || '').length < 8) return send(res, 400, { erro: 'A senha precisa ter ao menos 8 caracteres.' });
+    if (String(b.senha).length > 200) return send(res, 400, { erro: 'A senha pode ter até 200 caracteres.' });
     if (b.senha !== b.confirmar) return send(res, 400, { erro: 'As senhas não são iguais.' });
     if (db.users.some(u => u.email === email)) return send(res, 409, { erro: 'Este e-mail já está cadastrado.' });
     const perfil = b.perfil === 'operador' ? 'operador' : 'cliente';

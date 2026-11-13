@@ -19,6 +19,8 @@ module.exports = {
     { id: 'sao-joao-do-polesine', nome: 'São João do Polêsine', cor: '#E9EEF7', lat: -29.619, lng: -53.443 },
     { id: 'silveira-martins', nome: 'Silveira Martins', cor: '#D97706', lat: -29.646, lng: -53.59 },
   ],
+  // Categorias com local fixo de atendimento: só elas mostram endereço e horário na página pública do parceiro (guia e trilha usam o ponto de encontro).
+  COM_LOCAL: ['cantina', 'vinicola', 'restaurante', 'museu', 'hospedagem'],
   COMISSAO_PADRAO: 0.15, // 15% de cada reserva; o admin pode mudar por parceiro
   DESTAQUE_MENSAL: 80,   // destaque pago: R$ 80 por 30 dias, descontado do repasse
   HORAS_ULTIMA: 2,       // faltando 2h ou menos: desconto máximo (última hora)

@@ -24,7 +24,8 @@ const fotosUrl = pa => { const f = (pa.fotos || []).filter(x => x.url), capa = f
 // Destaque pago que vale hoje, e a nota pública do passeio (as avaliações removidas pelo admin não contam).
 const destaqueAtivo = (passeio_id, hoje = ymd(Date.now())) => db.destaques.find(d => d.passeio_id === passeio_id && d.inicio <= hoje && hoje <= d.fim);
 const avaliacoesDe = passeio_id => db.avaliacoes.filter(a => a.passeio_id === passeio_id && !a.removida);
-const notaDe = passeio_id => { const l = avaliacoesDe(passeio_id); return { nota: l.length ? Math.round(l.reduce((s, a) => s + a.nota, 0) / l.length * 10) / 10 : null, avaliacoes: l.length }; };
+const media = l => ({ nota: l.length ? Math.round(l.reduce((s, a) => s + a.nota, 0) / l.length * 10) / 10 : null, avaliacoes: l.length });
+const notaDe = passeio_id => media(avaliacoesDe(passeio_id));
 
 // Para o site, texto vazio e lista vazia vão como null: a tela esconde a linha com um teste só.
 const ou = v => v === '' || v == null ? null : v;
@@ -64,6 +65,9 @@ const avisos = r => {
     else if (tipo === 'voucher_reemitido') l.push({ ...base, texto: 'Seu voucher ganhou um código novo.' });
     else if (tipo) l.push({ ...base, texto: h.texto, assunto: h.assunto || null });
   });
+  // Das tentativas de validação, o turista só fica sabendo desta: o parceiro recusou o voucher por ser de outro dia ou horário.
+  for (const t of db.tentativas) if (t.reserva_id === r.id && t.motivo === 'recusado_outro_horario')
+    l.push({ id: `t${t.id}`, tipo: 'voucher_recusado', quando: t.criado_em, texto: 'Seu voucher não foi aceito no local porque é para outro dia ou horário. Confira a data no voucher.' });
   if (r.status === 'cancelada_parceiro' || r.status === 'cancelada_clima') {
     const saida = ofertaDe(r.oferta_id)?.status === 'cancelada', foraDoAr = r.cancelado_motivo === MOTIVO_FORA_DO_AR;
     // O nome fixo do motivo ("Cancelado por clima") já está dito na frase; só o texto que alguém escreveu entra depois dos dois-pontos.
@@ -90,7 +94,10 @@ const rvis = r => {
     titulo: pa?.titulo, cidade: pa?.cidade, operador: pr?.nome, motivoCancelamento: r.cancelado_motivo,
     avaliada: db.avaliacoes.some(a => a.reserva_id === r.id), qr: r.status === 'confirmada' ? assinar(dadosDoQr(r)) : null,
     passeioId: r.passeio_id, duracaoMin: pa?.duracao_min ?? null, observacoes: ou(r.observacoes), pessoasChegaram: r.pessoas_chegaram ?? null,
-    horasCancelar: r.horas_cancelar ?? HORAS_CANCELAR, obsCancelamento: ou(pa?.regras_cancelamento), pontoEncontro: ou(pa?.ponto_encontro), ...local(pa),
+    // O que o passeio incluía e as regras de cancelamento são os da hora da reserva (as reservas antigas, sem a cópia, mostram os de agora).
+    // O ponto de encontro é sempre o de agora: é onde a pessoa precisa chegar.
+    horasCancelar: r.horas_cancelar ?? HORAS_CANCELAR, obsCancelamento: ou(r.regras_cancelamento ?? pa?.regras_cancelamento),
+    inclui: lista(r.inclui ?? pa?.inclui), levar: lista(r.levar ?? pa?.levar), pontoEncontro: ou(pa?.ponto_encontro), ...local(pa),
     telefoneParceiro: comTelefone ? ou(pr?.telefone) : null, avisos: avisos(r) };
 };
 // Dados do usuário que podem ir para o navegador (nunca a senha).
@@ -170,6 +177,9 @@ const repasses = (pid, agora = Date.now()) => {
 // Campos de passeio que o operador (ou o admin) pode mandar, já limpos. Lança erro com a mensagem para a tela.
 const falha = (mensagem, status = 400) => { throw Object.assign(new Error(mensagem), { status, publico: true }); };
 const FOTO_URL = /^(\/img\/[\w\-./]+|data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*)$/;
+// Foto enviada (data URL): os primeiros bytes precisam ser mesmo do formato que ela diz ter. Não basta o nome do tipo.
+const ASSINATURA = { jpeg: /^ffd8ff/, png: /^89504e470d0a1a0a/, webp: /^52494646.{8}57454250/ };
+const imagemDeVerdade = url => { const m = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/]{0,24})/.exec(url); return !m || ASSINATURA[m[1]].test(Buffer.from(m[2], 'base64').toString('hex')); };
 const limparPasseio = campos => {
   const c = {}, num = ['duracao_min', 'capacidade', 'preco', 'desconto_max_padrao', 'lat', 'lng', 'horas_cancelar'];
   for (const k of ['titulo', 'categoria', 'cidade', 'descricao', 'duracao_min', 'ponto_encontro', 'lat', 'lng', 'capacidade', 'preco', 'desconto_max_padrao',
@@ -192,7 +202,7 @@ const limparPasseio = campos => {
   if (c.fotos !== undefined) {
     if (!Array.isArray(c.fotos) || c.fotos.length > 8) falha('No máximo 8 fotos.');
     c.fotos = c.fotos.map(f => {
-      if (!f || typeof f !== 'object' || (f.url != null && !FOTO_URL.test(f.url))) falha('Foto inválida. Use JPG, PNG ou WebP.');
+      if (!f || typeof f !== 'object' || (f.url != null && !(FOTO_URL.test(f.url) && imagemDeVerdade(f.url)))) falha('Foto inválida. Use JPG, PNG ou WebP.');
       return { id: texto(f.id, 60), url: f.url ?? null, tom: Number.isInteger(f.tom) ? f.tom : 0 };
     });
   }
@@ -201,5 +211,6 @@ const limparPasseio = campos => {
 
 module.exports = {
   DIA, passeioDe, parceiroDe, ofertaDe, falta, ativa, ocupadas, livres, pct, visivel, vis, detalhe, rvis, pub, resumoReserva, cancelar, cancelarFuturas,
-  destaqueAtivo, avaliacoesDe, notaDe, ou, ROTULO_CANCELAMENTO, email, emailDoTurista, auditar, repasses, meiaNoite, somaDias, falha, limparPasseio, FOTO_URL
+  destaqueAtivo, avaliacoesDe, media, notaDe, ou, ROTULO_CANCELAMENTO, email, emailDoTurista, auditar, repasses, meiaNoite, somaDias, falha, limparPasseio,
+  FOTO_URL, imagemDeVerdade
 };

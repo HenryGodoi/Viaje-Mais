@@ -9,7 +9,7 @@ const { send } = require('../http');
 const { DESTAQUE_MENSAL } = require('../config');
 const { iso, r2, ymd, texto, ehCidade, ehCategoria, nomeCurto, mascTelefone, mascChave, novaSolicitacao, novoPasseio } = require('../modelo');
 const { passeioDe, parceiroDe, ofertaDe, ativa, ocupadas, resumoReserva, cancelar, cancelarFuturas, email: enviarEmail, emailDoTurista, repasses,
-  meiaNoite, somaDias, falha, limparPasseio, FOTO_URL } = require('../regras');
+  meiaNoite, somaDias, falha, limparPasseio, FOTO_URL, imagemDeVerdade } = require('../regras');
 const { chavePublica, conferir } = require('../voucher');
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -213,7 +213,7 @@ const ACOES = {
     for (const k of ['nome', 'categoria', 'cidade', 'endereco', 'telefone', 'email', 'cadastur', 'horario']) if (campos[k] !== undefined) novo[k] = texto(campos[k]);
     for (const k of ['lat', 'lng']) if (campos[k] !== undefined && campos[k] !== '' && Number.isFinite(+campos[k])) novo[k] = +campos[k];
     if (campos.foto !== undefined) {
-      if (campos.foto !== null && !(typeof campos.foto === 'string' && FOTO_URL.test(campos.foto) && campos.foto.length <= 300000)) falha('Foto inválida. Use JPG, PNG ou WebP.');
+      if (campos.foto !== null && !(typeof campos.foto === 'string' && FOTO_URL.test(campos.foto) && imagemDeVerdade(campos.foto) && campos.foto.length <= 300000)) falha('Foto inválida. Use JPG, PNG ou WebP.');
       novo.foto = campos.foto;
     }
     const final = { ...p, ...novo };
@@ -265,6 +265,7 @@ const ACOES = {
   trocarSenha({ atual, nova, confirma }, u, agora, { tok }) {
     if (!check(String(atual || ''), u.senha)) falha('A senha atual não confere.');
     if (String(nova || '').length < 8) falha('A nova senha precisa ter pelo menos 8 caracteres.');
+    if (String(nova).length > 200) falha('A senha pode ter até 200 caracteres.');
     if (nova !== confirma) falha('A confirmação não bate com a nova senha.');
     u.senha = hash(String(nova));
     sairDosOutros(u.id, tok); // os outros aparelhos precisam entrar de novo

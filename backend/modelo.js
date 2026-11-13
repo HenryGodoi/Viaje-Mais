@@ -15,10 +15,14 @@ const garantir = db => {
 };
 
 const iso = (t = Date.now()) => new Date(t).toISOString();
-const r2 = v => Math.round(v * 100) / 100;
+// EPSILON: sem ele, 1.005 * 100 vira 100.49999 no computador e o meio centavo arredonda para baixo.
+const r2 = v => Math.round((v + Number.EPSILON) * 100) / 100;
 const pad = n => String(n).padStart(2, '0');
 const ymd = t => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 const texto = (v, max = 200) => String(v ?? '').trim().slice(0, max);
+
+// Telefone com DDD: de 10 a 13 dígitos (com ou sem o 55). A mesma regra vale na reserva e no perfil.
+const telefoneValido = t => { const n = String(t ?? '').replace(/\D/g, '').length; return n >= 10 && n <= 13; };
 
 const nomeCategoria = id => CATEGORIAS.find(c => c[0] === id)?.[1] || '';
 const ehCategoria = id => CATEGORIAS.some(c => c[0] === id);
@@ -55,6 +59,8 @@ const novoPasseio = c => ({
 // status_pagamento: 'pendente' enquanto não houver Pix no app (o turista paga no local).
 // horas_cancelar: copiada do passeio quando a reserva é feita; mudar o passeio depois não muda a regra de quem já reservou.
 // cancelado_motivo é o que o turista lê; cancelado_obs é a anotação interna do admin.
+// inclui, levar e regras_cancelamento: cópia do passeio feita na hora da reserva (rotas/ofertas.js). Não têm valor padrão aqui
+// de propósito: a reserva antiga, sem a cópia, mostra os do passeio de agora.
 const novaReserva = c => ({
   observacoes: '', horas_cancelar: HORAS_CANCELAR, status: 'confirmada', status_pagamento: 'pendente', pago_em: null, validado_em: null, validado_por: '', aparelho: '', modo: '',
   sincronizado_em: null, pessoas_chegaram: null, aceito_com_aviso: '', cancelado_em: null, cancelado_motivo: '', cancelado_obs: '', reembolso: 0, codigos_antigos: [],
@@ -64,6 +70,6 @@ const novaReserva = c => ({
 const novaSolicitacao = c => ({ passeio_id: null, campos: null, status: 'pendente', motivo: '', mensagem: '', decidido_em: null, decidido_por: '', criado_em: iso(), ...c });
 
 module.exports = {
-  LISTAS, garantir, iso, r2, ymd, texto, nomeCategoria, ehCategoria, ehCidade, idCidade,
+  LISTAS, garantir, iso, r2, ymd, texto, telefoneValido, nomeCategoria, ehCategoria, ehCidade, idCidade,
   nomeCurto, mascTelefone, mascChave, mascEmail, novoParceiro, novoPasseio, novaReserva, novaSolicitacao
 };
