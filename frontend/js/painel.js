@@ -1,6 +1,5 @@
 const $ = id => document.getElementById(id), app = $('app');
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const brl = n => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const dataTxt = i => new Date(i).toLocaleDateString('pt-BR');
 const quando = i => new Date(i).toLocaleString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 // 90 -> "1 h 30 min", 60 -> "1 h", 45 -> "45 min"
 const duracao = m => !m ? '' : m < 60 ? `${m} min` : m % 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m / 60} h`;
@@ -10,14 +9,16 @@ const ST = { reservada: 'Reservada', usada: 'Usada', no_show: 'Não compareceu',
 const PAINEL = { operador: '/operador/', admin: '/admin/' };
 // Telas que só existem com login. As ofertas (#/ e #/oferta/ID) abrem sem conta: o login é pedido só para reservar.
 const PRIVADAS = ['reservas', 'voucher', 'perfil'];
-let U = null, OFFLINE = false, F = { cidade: '', cat: '', q: '' };
+let U = null, OFFLINE = false, F = { cidade: '', cat: '', q: '', data: '', ordem: '' };
 // Endereço do login guardando esta tela, para voltar a ela depois de entrar.
 const loginUrl = () => '/entrar.html?ir=' + encodeURIComponent(location.pathname + location.hash);
 const paraLogin = () => location.href = loginUrl();
 const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
+// Sem rede, o fetch lança um TypeError em inglês ("Failed to fetch"). As telas testam instanceof TypeError, então ele continua sendo um.
+const SEM_REDE = 'Sem conexão com o servidor. Confira a internet e tente de novo.';
 const api = async (u, m = 'GET', b) => {
-  const r = await fetch(u, { method: m, headers: { 'Content-Type': 'application/json' }, body: b && JSON.stringify(b) });
+  let r; try { r = await fetch(u, { method: m, headers: { 'Content-Type': 'application/json' }, body: b && JSON.stringify(b) }); } catch { throw new TypeError(SEM_REDE); }
   if (r.status === 401) { localStorage.removeItem('vm_user'); paraLogin(); }
   const j = await r.json(); if (!r.ok) { const e = new Error(j.erro); e.status = r.status; throw e; } return j;
 };
@@ -78,11 +79,24 @@ async function vOfertas() {
   const opt = (arr, sel) => arr.map(v => `<option ${v === sel ? 'selected' : ''}>${esc(v)}</option>`).join('');
   tela('/', 'Vagas de hoje em diante', 'Quanto mais vazio o horário, maior o desconto. Ao reservar, o preço fica travado.',
     `<div class="filtros"><input id="fq" type="search" aria-label="Buscar passeio ou cidade" placeholder="Buscar passeio ou cidade" value="${esc(F.q)}"><select id="fc" aria-label="Cidade"><option value="">Todas as cidades</option>${opt([...new Set(l.map(o => o.cidade))].sort(), F.cidade)}</select>
-    <select id="fk" aria-label="Categoria"><option value="">Todas as categorias</option>${opt([...new Set(l.map(o => o.categoria))].sort(), F.cat)}</select></div><div class="grade" id="g"></div>`);
-  const show = () => { const v = l.filter(o => (!F.cidade || o.cidade === F.cidade) && (!F.cat || o.categoria === F.cat) && norm(o.titulo + ' ' + o.cidade + ' ' + o.categoria).includes(norm(F.q.trim()))); $('g').innerHTML = v.length ? v.map(card).join('') : (l.length ? vazio('Nenhuma vaga com esses filtros.', 'Troque a busca, a cidade ou a categoria para ver outras vagas.') : vazio('Ainda não há vagas publicadas.', 'Os passeios avisam as vagas que sobram. Volte em breve.')); };
+    <select id="fk" aria-label="Categoria"><option value="">Todas as categorias</option>${opt([...new Set(l.map(o => o.categoria))].sort(), F.cat)}</select>
+    <select id="fd" aria-label="Data">${[['', 'Qualquer data'], ['hoje', 'Hoje'], ['amanha', 'Amanhã'], ['fds', 'Este fim de semana'], ['7', 'Próximos 7 dias']].map(([v, t]) => `<option value="${v}" ${v === F.data ? 'selected' : ''}>${t}</option>`).join('')}</select>
+    <select id="fo" aria-label="Ordem">${[['', 'Mais cedo'], ['desconto', 'Maior desconto']].map(([v, t]) => `<option value="${v}" ${v === F.ordem ? 'selected' : ''}>${t}</option>`).join('')}</select></div><div class="grade" id="g"></div>`);
+  const show = () => { const v = l.filter(o => (!F.cidade || o.cidade === F.cidade) && (!F.cat || o.categoria === F.cat) && naData(o, F.data) && norm(o.titulo + ' ' + o.cidade + ' ' + o.categoria).includes(norm(F.q.trim())));
+    // Sem ordem escolhida fica a do servidor: destaque primeiro, depois a saída mais cedo.
+    if (F.ordem === 'desconto') v.sort((a, b) => b.desconto - a.desconto || new Date(a.inicio) - new Date(b.inicio));
+    $('g').innerHTML = v.length ? v.map(card).join('') : (l.length ? vazio('Nenhuma vaga com esses filtros.', 'Troque a busca, a cidade ou a categoria para ver outras vagas.') : vazio('Ainda não há vagas publicadas.', 'Os passeios avisam as vagas que sobram. Volte em breve.')); };
   $('fq').oninput = e => { F.q = e.target.value; show(); };
-  $('fc').onchange = e => { F.cidade = e.target.value; show(); }; $('fk').onchange = e => { F.cat = e.target.value; show(); }; show();
+  $('fc').onchange = e => { F.cidade = e.target.value; show(); }; $('fk').onchange = e => { F.cat = e.target.value; show(); };
+  $('fd').onchange = e => { F.data = e.target.value; show(); }; $('fo').onchange = e => { F.ordem = e.target.value; show(); }; show();
 }
+// Filtro por data: "fds" é o próximo sábado e domingo (ou este, se já for fim de semana).
+const dia0 = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+const naData = (o, f) => {
+  if (!f) return true; const hoje = dia0(Date.now()), dif = Math.round((dia0(o.inicio) - hoje) / 864e5);
+  if (f === 'hoje') return dif === 0; if (f === 'amanha') return dif === 1; if (f === '7') return dif >= 0 && dif <= 7;
+  const sab = hoje.getDay() === 0 ? -1 : 6 - hoje.getDay(); return dif >= Math.max(sab, 0) && dif <= sab + 1;
+};
 
 const mapaUrl = o => o.lat != null && o.lng != null ? `https://www.google.com/maps/search/?api=1&query=${o.lat},${o.lng}` : '';
 const linkMapa = o => mapaUrl(o) ? `<a href="${mapaUrl(o)}" target="_blank" rel="noopener">Abrir no mapa</a>` : '';
@@ -95,7 +109,17 @@ const saber = o => {
     + li('Idiomas', o.idiomas?.length ? esc(o.idiomas.join(', ')) : '') + li('Acessibilidade', esc(o.acessibilidade)) + li('Responsável', esc(o.responsavel));
   return itens ? `<div class="saber"><h2>O que saber</h2><dl>${itens}</dl></div>` : '';
 };
-const sobreParceiro = p => p ? `<div class="sobre"><h2>Sobre o parceiro</h2><div class="sobre-parceiro">${p.foto ? `<img src="${esc(p.foto)}" alt="">` : `<span class="avatar">${inicial(p.nome)}</span>`}<div><strong>${esc(p.nome)}</strong><p class="meta">${esc(p.categoria)}${p.cidade ? ` · ${esc(p.cidade)}` : ''}</p></div></div></div>` : '';
+const sobreParceiro = p => p ? `<div class="sobre"><h2>Sobre o parceiro</h2><a class="sobre-parceiro" href="#/parceiro/${p.id}">${p.foto ? `<img src="${esc(p.foto)}" alt="">` : `<span class="avatar">${inicial(p.nome)}</span>`}<div><strong>${esc(p.nome)}</strong><p class="meta">${esc(p.categoria)}${p.cidade ? ` · ${esc(p.cidade)}` : ''}</p><span class="link-parceiro">Ver o parceiro e as outras saídas dele →</span></div></a></div>` : '';
+const estrelasTxt = n => '★'.repeat(n) + '☆'.repeat(5 - n);
+const comentario = c => `<li${c.removida ? ' class="removida"' : ''}><div class="av-topo"><span class="estrela" aria-label="${c.nota} de 5">${estrelasTxt(c.nota)}</span>${c.titulo ? `<a href="#/voucher/${c.reservaId}"><strong>${esc(c.titulo)}</strong></a>` : `<strong>${esc(c.nome)}</strong>`}<span class="meta">${dataTxt(c.quando)}</span>${c.removida ? '<span class="tag cancelada">Removida</span>' : ''}</div>
+  ${c.comentario ? `<p>${esc(c.comentario)}</p>` : ''}${c.resposta ? `<p class="resposta"><strong>O parceiro respondeu:</strong> ${esc(c.resposta.texto)}</p>` : ''}${c.removida ? '<p class="nota">O Viaje Mais retirou esta avaliação depois de uma denúncia do parceiro.</p>' : ''}</li>`;
+// Comentários públicos do passeio: os 3 mais novos e um botão para ver todos.
+async function comentarios(passeioId, el) {
+  let a; try { a = await api(`/api/passeios/${passeioId}/avaliacoes`); } catch { return; }
+  if (!a.lista?.length) return;
+  el.innerHTML = `<div class="sobre"><h2>Avaliações</h2>${estrela(a)}<ul class="comentarios">${a.lista.slice(0, 3).map(comentario).join('')}</ul>${a.lista.length > 3 ? `<button class="btn sec peq" id="mais-av">Ver todas (${a.lista.length})</button>` : ''}</div>`;
+  const b = $('mais-av'); if (b) b.onclick = () => { el.querySelector('.comentarios').innerHTML = a.lista.map(comentario).join(''); b.remove(); };
+}
 // O prazo de cancelar é escolhido pelo parceiro (3, 12, 24 ou 48 h) e o servidor segue o mesmo número.
 const regraCancelar = (h, obs) => h ? `<p class="regra"><strong>Cancelamento grátis até ${h} h antes.</strong>${obs ? `<span class="nota">${esc(obs)}</span>` : ''}</p>` : '';
 const PAGAMENTO = '<p class="aviso">Você paga no local, direto ao parceiro. A reserva garante a vaga e o preço.</p>';
@@ -115,7 +139,7 @@ const caixaReserva = o => {
     <a class="btn" href="${loginUrl()}">Entrar para reservar</a><p class="nota">Ainda não tem conta? <a href="${loginUrl().replace('?ir=', '?ir=').replace('/entrar.html', '/entrar.html') + '#criar'}">Criar conta</a> leva um minuto.</p></div>`;
   return `<form class="caixa" id="r"><h2>Reservar</h2>
     <div><label for="n">Seu nome</label><input id="n" value="${esc(U.nome)}" autocomplete="name" maxlength="80" required></div>
-    <div><label for="t">Telefone com DDD</label><input id="t" type="tel" autocomplete="tel" placeholder="(55) 99999-9999" value="${esc(U.telefone || '')}" required></div>
+    <div><label for="t">Telefone com DDD</label><input id="t" type="tel" autocomplete="tel" placeholder="(55) 99999-9999" value="${esc(U.telefone || '')}" maxlength="20" required></div>
     <div><label for="q">Pessoas</label><select id="q">${Array.from({ length: Math.min(o.livres, 10) }, (_, i) => `<option>${i + 1}</option>`).join('')}</select></div>
     <div><label for="ob">Observações (opcional)</label><textarea id="ob" rows="2" maxlength="300" placeholder="Ex.: vou com criança de colo"></textarea></div>
     <div class="total" id="tot"></div>${regra}${PAGAMENTO}
@@ -126,17 +150,31 @@ const caixaReserva = o => {
 async function vOferta(id) {
   let o; try { o = await api('/api/ofertas/' + id); }
   catch (e) { if (e.status !== 404) throw e; return tela('/oferta', 'Passeio indisponível', '', `<a class="voltar" href="#/">${ICONE.voltar}Voltar às ofertas</a>${vazio('Este passeio não está mais disponível.', 'Veja as <a href="#/">outras vagas</a> da região.')}`); }
+  const aberta = !o.fechada && o.livres > 0 && new Date(o.inicio) > Date.now();
   tela('/oferta', esc(o.titulo), `${esc(o.cidade)}, ${quando(o.inicio)}${o.duracaoMin ? ` · ${duracao(o.duracaoMin)}` : ''}${o.parceiro ? '' : `. Oferecido por ${esc(o.operador)}.`}`,
     `<a class="voltar" href="#/">${ICONE.voltar}Voltar às ofertas</a><div class="det"><div>
-    <div class="resumo">${selo(o)}<div class="corpo">${preco(o)}${estrela(o)}${ocupacao(o)}<p class="nota">Quanto mais vagas sobram, maior o desconto. Reservando agora, você garante este preço.</p></div></div>
+    <div class="resumo">${selo(o)}<div class="corpo">${preco(o)}${estrela(o)}${aberta ? ocupacao(o) + '<p class="nota">Quanto mais vagas sobram, maior o desconto. Reservando agora, você garante este preço.</p>' : ''}</div></div>
     ${o.fotos?.length ? `<div class="galeria">${o.fotos.map(f => `<img src="${esc(f)}" alt="${esc(o.titulo)}" loading="lazy">`).join('')}</div>` : ''}
     <div class="sobre"><h2>Sobre o passeio</h2><p>${tags(o)}</p><p>${esc(o.descricao) || 'O operador ainda não escreveu uma descrição.'}</p></div>
-    ${saber(o)}${sobreParceiro(o.parceiro)}</div>${caixaReserva(o)}</div>`);
+    ${saber(o)}${sobreParceiro(o.parceiro)}<div id="avs"></div></div>${caixaReserva(o)}</div>`);
+  if (o.avaliacoes) comentarios(o.passeioId, $('avs'));
   const f = $('r'); if (!f) return;
   const tot = () => $('tot').textContent = 'Total: ' + brl(o.precoFinal * $('q').value); $('q').onchange = tot; tot();
   aoEnviar(f, async () => { $('m').textContent = '';
     try { const r = await api('/api/reservas', 'POST', { ofertaId: o.id, pessoas: +$('q').value, nome: $('n').value, telefone: $('t').value, observacoes: $('ob').value }); await carregarReservas(); location.hash = '#/voucher/' + r.id; }
     catch (x) { erro($('m'), x); } });
+}
+
+// Página pública do parceiro: dados, nota e as saídas à venda dele (mesmo cartão da lista).
+async function vParceiro(id) {
+  let p; try { p = await api('/api/parceiros/' + id); }
+  catch (e) { if (e.status !== 404) throw e; return tela('/', 'Parceiro indisponível', '', `<a class="voltar" href="#/">${ICONE.voltar}Voltar às ofertas</a>${vazio('Este parceiro não está mais no Viaje Mais.', 'Veja as <a href="#/">outras vagas</a> da região.')}`); }
+  const li = (rot, val) => val ? `<div><dt>${rot}</dt><dd>${val}</dd></div>` : '', dados = li('Endereço', esc(p.endereco)) + li('Horário', esc(p.horario));
+  tela('/', esc(p.nome), `${esc(p.categoria)}${p.cidade ? ` · ${esc(p.cidade)}` : ''}`,
+    `<a class="voltar" href="#/">${ICONE.voltar}Voltar às ofertas</a>
+    <div class="parceiro-topo">${p.foto ? `<img src="${esc(p.foto)}" alt="">` : `<span class="avatar grande">${inicial(p.nome)}</span>`}
+      <div>${estrela(p)}${p.cadastur ? '<div class="tags"><span class="tag acesso">Cadastur</span></div>' : ''}${dados ? `<div class="saber"><dl>${dados}</dl></div>` : ''}</div></div>
+    <h2>Saídas à venda</h2>${p.ofertas?.length ? `<div class="grade">${p.ofertas.map(card).join('')}</div>` : vazio('Nenhuma saída à venda agora.', 'Este parceiro avisa aqui quando sobrar vaga.')}`);
 }
 
 /* ---------- RESERVAS E VOUCHER ---------- */
@@ -168,6 +206,13 @@ const inclinar = el => {
     el.style.transform = `rotateX(${(-y * 20).toFixed(1)}deg) rotateY(${(x * 20).toFixed(1)}deg) scale(1.05)`; };
   el.onpointerleave = el.onpointercancel = () => el.style.transform = '';
 };
+// O que vale no dia: o ponto de encontro de agora e o que inclui/levar de quando a reserva foi feita.
+const saberVoucher = r => {
+  const li = (rot, val) => val ? `<div><dt>${rot}</dt><dd>${val}</dd></div>` : '';
+  const local = r.pontoEncontro || mapaUrl(r) ? `${esc(r.pontoEncontro || 'Local do passeio')} ${linkMapa(r)}` : '';
+  const itens = li('Ponto de encontro', local) + li('O que inclui', lista(r.inclui)) + li('O que levar', lista(r.levar));
+  return itens ? `<div class="saber"><h2>Para o dia</h2><dl>${itens}</dl></div>` : '';
+};
 const avisoHtml = (a, r, novo) => {
   let extra = '';
   if (a.tipo === 'remarcada' && a.deData && a.paraData) extra = `<br>De ${quando(a.deData)} para <strong>${quando(a.paraData)}</strong>.`;
@@ -192,7 +237,7 @@ async function vVoucher(id) {
       <dl class="v-dados"><div><dt>Em nome de</dt><dd>${esc(r.nome)}</dd></div><div><dt>Pessoas</dt><dd>${pessoasTxt(r)}</dd></div><div><dt>Total</dt><dd>${brl(r.total)}</dd></div>${r.observacoes ? `<div><dt>Observações</dt><dd>${esc(r.observacoes)}</dd></div>` : ''}</dl>
     </article></div>
     <dialog class="qr-grande" id="dq" aria-label="QR code da reserva">${qr}<div class="codigo">${esc(r.codigo)}</div><form method="dialog"><button class="btn">Fechar</button></form></dialog>
-    ${r.pontoEncontro || mapaUrl(r) ? `<p class="meta">Ponto de encontro: ${esc(r.pontoEncontro || 'local do passeio')}. ${linkMapa(r)}</p>` : ''}
+    ${ativa ? saberVoucher(r) : ''}
     ${r.status === 'cancelada' && r.motivoCancelamento && !avisos.some(a => a.tipo === 'cancelada') ? `<p class="aviso">Motivo do cancelamento: ${esc(r.motivoCancelamento)}</p>` : ''}
     <p class="meta">Preço com ${r.desconto}% de desconto, travado no momento da reserva. Toque no QR code para ampliar.</p>
     ${ativa ? regraCancelar(horas, r.obsCancelamento) : ''}${ativa && !podeCancelar ? '<p class="nota">O prazo para cancelar pela internet já passou. Fale com o parceiro.</p>' : ''}
@@ -222,7 +267,8 @@ async function vVoucher(id) {
 const reduzir = f => new Promise((ok, falha) => {
   const img = new Image();
   img.onload = () => { const t = 320, c = document.createElement('canvas'), s = Math.min(img.width, img.height); c.width = c.height = t;
-    c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, t, t); URL.revokeObjectURL(img.src); ok(c.toDataURL('image/jpeg', .85)); };
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, t, t); // JPEG não tem transparência: sem isso, PNG transparente ficava preto
+    g.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, t, t); URL.revokeObjectURL(img.src); ok(c.toDataURL('image/jpeg', .85)); };
   img.onerror = () => falha(new Error('Não foi possível abrir essa imagem. Use JPG, PNG ou WebP.'));
   img.src = URL.createObjectURL(f);
 });
@@ -232,6 +278,8 @@ async function vPerfil() {
   // Histórico: o que já aconteceu (usadas, canceladas ou com horário passado). As ativas ficam em "Minhas reservas".
   const hist = l.filter(r => r.status !== 'reservada' || new Date(r.inicio) < Date.now());
   const feitos = l.filter(r => r.status === 'usada').length;
+  const avs = OFFLINE ? [] : await api('/api/avaliacoes').catch(() => []);
+  const msgs = l.flatMap(r => (r.avisos || []).filter(a => a.tipo === 'mensagem').map(a => ({ ...a, titulo: r.titulo, rid: r.id }))).sort((a, b) => new Date(b.quando) - new Date(a.quando));
   const economia = l.filter(r => !['cancelada', 'no_show'].includes(r.status) && r.desconto > 0 && r.desconto < 100).reduce((s, r) => s + (r.precoUnit / (1 - r.desconto / 100) - r.precoUnit) * r.pessoas, 0);
   // O perfil é uma área à parte: sem as abas de ofertas e reservas. Chega-se a ele pela foto no topo ou pelo "Meu painel" da home.
   tela(null, 'Meu perfil', 'Seus dados, sua senha e os passeios que você já fez.', `<div class="perfil">
@@ -241,10 +289,12 @@ async function vPerfil() {
     <dl class="numeros"><div><dt>Passeios feitos</dt><dd>${feitos}</dd></div><div><dt>Economia com descontos</dt><dd>${brl(economia)}</dd></div></dl></aside>
   <div class="perfil-secoes">
     <section class="secao"><h2>Histórico</h2>${hist.length ? `<div class="lista">${hist.map(linhaReserva).join('')}</div>` : vazio('Seu histórico aparece aqui depois do primeiro passeio.')}</section>
+    <section class="secao"><h2>Minhas avaliações</h2>${avs.length ? `<ul class="comentarios">${avs.map(comentario).join('')}</ul>` : vazio('Você ainda não avaliou nenhum passeio.', 'Depois de usar um voucher, o botão "Avaliar o passeio" aparece nele.')}</section>
+    <section class="secao"><h2>Mensagens</h2>${msgs.length ? `<ul class="comentarios">${msgs.map(m => `<li><div class="av-topo"><strong>${esc(m.assunto || 'Mensagem do Viaje Mais')}</strong><span class="meta">${dataTxt(m.quando)}</span></div><p>${esc(m.texto)}</p><p class="nota">Sobre a reserva <a href="#/voucher/${m.rid}">${esc(m.titulo)}</a>.</p></li>`).join('')}</ul>` : vazio('Nenhuma mensagem do Viaje Mais.', 'Avisos sobre as suas reservas aparecem aqui e no voucher.')}</section>
     <form class="caixa secao" id="fd"><h2>Dados pessoais</h2>
       <div><label for="pn">Nome completo</label><input id="pn" value="${esc(U.nome)}" autocomplete="name" maxlength="80" required></div>
       <div><label for="pe">E-mail</label><input id="pe" value="${esc(U.email)}" disabled><p class="nota">O e-mail é o seu login e não pode ser trocado por aqui.</p></div>
-      <div><label for="pt">Telefone com DDD</label><input id="pt" type="tel" value="${esc(U.telefone || '')}" autocomplete="tel" placeholder="(55) 99999-9999"><p class="nota">Já vem preenchido quando você reservar.</p></div>
+      <div><label for="pt">Telefone com DDD</label><input id="pt" type="tel" value="${esc(U.telefone || '')}" autocomplete="tel" placeholder="(55) 99999-9999" maxlength="20"><p class="nota">Já vem preenchido quando você reservar.</p></div>
       <div class="msg" id="md" role="alert"></div><button class="btn">Salvar dados</button></form>
     <form class="caixa secao" id="fs"><h2>Trocar senha</h2>
       <div><label for="sa">Senha atual</label><input id="sa" type="password" autocomplete="current-password" required></div>
@@ -277,7 +327,7 @@ const reconectar = async () => { if (!OFFLINE) return; try { const r = await fet
 async function rota() {
   // A home manda filtros no endereço: #/?busca=Nova%20Palma, #/?cidade=Agudo, #/?categoria=Vinícola
   const [h, qs] = (location.hash.slice(1) || '/').split('?'), [, a, id] = h.split('/');
-  if (qs) { const p = new URLSearchParams(qs); F = { q: p.get('busca') || '', cidade: p.get('cidade') || '', cat: p.get('categoria') || '' }; }
+  if (qs) { const p = new URLSearchParams(qs); F = { q: p.get('busca') || '', cidade: p.get('cidade') || '', cat: p.get('categoria') || '', data: '', ordem: '' }; }
   if (!U) $('entrar').href = loginUrl();
   if (!U && PRIVADAS.includes(a)) return paraLogin();
   // Só mostra o spinner se a tela demorar: com a internet rápida ele nem chega a piscar.
@@ -285,7 +335,7 @@ async function rota() {
   try {
     await reconectar();
     if (OFFLINE && !['reservas', 'voucher'].includes(a)) return location.hash = '#/reservas';
-    if (a === 'oferta') return await vOferta(id); if (a === 'reservas') return await vReservas(); if (a === 'voucher') return await vVoucher(id);
+    if (a === 'oferta') return await vOferta(id); if (a === 'parceiro') return await vParceiro(id); if (a === 'reservas') return await vReservas(); if (a === 'voucher') return await vVoucher(id);
     if (a === 'perfil') return await vPerfil();
     await vOfertas();
   } catch (e) { tela(null, 'Não foi possível abrir esta tela', '', vazio(e instanceof TypeError ? 'Sem conexão com o servidor.' : esc(e.message), 'Confira a internet e tente de novo.')); }
