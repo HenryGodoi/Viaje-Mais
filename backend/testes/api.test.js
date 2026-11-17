@@ -152,6 +152,40 @@ test('destaque pago vem primeiro e vai para o hero; a nota do passeio é públic
   assert.equal(ok(await visitante('GET', '/api/ofertas/' + o.id)).nota, 4);
 });
 
+test('página do parceiro, minhas avaliações e a reserva com o que valia quando foi feita', async () => {
+  const o = ofertas[0], id = ok(await visitante('GET', '/api/ofertas/' + o.id)).parceiro.id;
+  let p = ok(await visitante('GET', '/api/parceiros/' + id));
+  assert.deepEqual([p.nome, p.categoria, p.endereco, p.nota, p.avaliacoes], ['Parceiro Demo', 'Guia', null, 4, 1]);
+  assert.ok(p.ofertas.length > 0 && p.ofertas.every(x => x.operador === 'Parceiro Demo'));
+  for (const k of ['telefone', 'email', 'documento', 'pix_chave', 'comissao_pct']) assert.ok(!(k in p), k + ' não vai para a página pública');
+  ok(await acaoOperador('salvarPerfil', { campos: { categoria: 'vinicola', endereco: 'Rua A, 10', horario: '9h às 18h' } }));
+  p = ok(await visitante('GET', '/api/parceiros/' + id)); // só quem tem local de atendimento mostra endereço e horário
+  assert.deepEqual([p.categoria, p.endereco, p.horario], ['Vinícola', 'Rua A, 10', '9h às 18h']);
+  assert.equal((await visitante('GET', '/api/parceiros/99999')).status, 404);
+
+  const r = await reservar(o.id); // o passeio muda depois; a reserva continua com o que incluía
+  ok(await acaoOperador('salvarPasseio', { id: o.passeioId, campos: { inclui: 'Só o guia' } }));
+  assert.deepEqual(ok(await visitante('GET', '/api/ofertas/' + o.id)).inclui, ['Só o guia']);
+  ok(await acaoOperador('registrarRecusa', { codigo: r.codigo, tipo: 'outro_horario' }));
+  const depois = await minhaReserva(r.id);
+  assert.deepEqual(depois.inclui, ['Guia', '1,5 litro de água', 'lanche']);
+  assert.deepEqual(depois.avisos.map(x => x.tipo), ['voucher_recusado']);
+
+  const minhas = ok(await turista('GET', '/api/avaliacoes'));
+  assert.deepEqual([minhas.length, minhas[0].nota, minhas[0].removida, minhas[0].resposta, minhas[0].titulo], [1, 4, false, null, 'Termas do Recanto Maestro']);
+  assert.equal((await visitante('GET', '/api/avaliacoes')).status, 401);
+});
+
+test('limites: nome e telefone compridos demais, e foto que só diz que é foto', async () => {
+  const conta = { email: 'outro@teste.com', senha: SENHA, confirmar: SENHA };
+  assert.equal((await pessoa()('POST', '/api/cadastro', { ...conta, nome: 'x'.repeat(81) })).status, 400);
+  assert.equal((await turista('POST', '/api/reservas', { ofertaId: ofertas[0].id, pessoas: 1, nome: 'Ana', telefone: '5'.repeat(14) })).status, 400);
+  const falsa = 'data:image/png;base64,' + Buffer.from('<script>alert(1)</script>').toString('base64');
+  const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+  assert.equal((await turista('POST', '/api/perfil/foto', { foto: falsa })).status, 400);
+  ok(await turista('POST', '/api/perfil/foto', { foto: png }));
+});
+
 test('envio grande demais é recusado sem derrubar o servidor', async () => {
   const envio = kb => fetch(SITE + '/api/login', { method: 'POST', body: 'x'.repeat(kb * 1024) }).then(r => r.status, () => 'conexão cortada');
   assert.equal(await envio(500), 413);

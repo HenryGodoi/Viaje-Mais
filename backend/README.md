@@ -69,10 +69,10 @@ Toda resposta de erro é `{ erro: 'mensagem' }`. Sem login: 401. Perfil errado: 
 
 | Rota | Quem | O que faz |
 |---|---|---|
-| `POST /api/cadastro` | público | `{ nome, email, senha, confirmar, perfil }`. Com `perfil: 'operador'`, cria também o parceiro (empresa), pendente de aprovação; aceita `negocio`, `cidade` (nome) e `categoria` (id), todos opcionais |
+| `POST /api/cadastro` | público | `{ nome, email, senha, confirmar, perfil }` (nome até 80 caracteres, e-mail até 120, senha de 8 a 200). Com `perfil: 'operador'`, cria também o parceiro (empresa), pendente de aprovação; aceita `negocio`, `cidade` (nome) e `categoria` (id), todos opcionais |
 | `POST /api/login` | público | `{ email, senha }`. 5 erros travam o e-mail por 15 min (429). Validador convidado vira ativo no primeiro login |
 | `POST /api/logout`, `GET /api/me` | logado | `me` devolve `id, nome, email, perfil, status, papel?, telefone, temFoto` |
-| `POST /api/perfil`, `GET`/`POST /api/perfil/foto`, `DELETE /api/perfil` | viajante | Dados, foto e excluir conta |
+| `POST /api/perfil`, `GET`/`POST /api/perfil/foto`, `DELETE /api/perfil` | viajante | Dados, foto e excluir conta. O telefone tem de 10 a 13 dígitos (ou fica vazio). A foto é conferida pelo conteúdo: precisa ser mesmo JPG, PNG ou WebP |
 | `POST /api/perfil/senha` | logado | `{ atual, nova, confirmar }`; desloga os outros aparelhos |
 
 ### Site do turista (formato de sempre, em camelCase)
@@ -84,8 +84,10 @@ Toda resposta de erro é `{ erro: 'mensagem' }`. Sem login: 401. Perfil errado: 
 | `GET /api/ofertas` | público | Saídas à venda, os destaques pagos primeiro e depois a mais cedo: `id, passeioId, inicio, vagas, livres, descontoMax, titulo, cidade, categoria` (nome: "Vinícola"), `descricao, fotos` (só a capa), `operador, precoNormal, desconto, precoFinal, ultimaHora, duracaoMin, acessivel, destaque, nota, avaliacoes` |
 | `GET /api/ofertas/:id` | público | A página da oferta: tudo da lista, com todas as `fotos`, mais `pontoEncontro, lat, lng, inclui, levar, idiomas` (listas), `acessibilidade, responsavel, horasCancelar, obsCancelamento, fechada` e `parceiro: { id, nome, foto, categoria, cidade }` |
 | `GET /api/passeios/:id/avaliacoes` | público | `{ nota, avaliacoes, lista: [{ id, nome, nota, comentario, quando, resposta }] }`. Só o primeiro nome; sem as removidas; mais novas primeiro |
-| `POST /api/reservas` | viajante | `{ ofertaId, pessoas, nome, telefone, observacoes? }`. Trava o preço, a comissão e o prazo de cancelamento do momento. `observacoes` é cortado em 300 caracteres |
-| `GET /api/reservas` | viajante | As reservas da conta: `id, ofertaId, pessoas, nome, telefone, desconto, precoUnit, total, codigo, status, criada, usadaEm, inicio, titulo, cidade, operador, motivoCancelamento, avaliada, qr, passeioId, duracaoMin, observacoes, pessoasChegaram, horasCancelar, obsCancelamento, pontoEncontro, lat, lng, telefoneParceiro, avisos` |
+| `GET /api/parceiros/:id` | público | A página do parceiro: `id, nome, foto, categoria, cidade, endereco, horario, cadastur` (`true`/`false`), `nota, avaliacoes` (de todos os passeios dele) e `ofertas` (as saídas à venda, no formato da lista). 404 se o parceiro não estiver ativo |
+| `POST /api/reservas` | viajante | `{ ofertaId, pessoas, nome, telefone, observacoes? }`. O telefone tem de 10 a 13 dígitos. Trava o preço, a comissão e o prazo de cancelamento do momento, e guarda uma cópia do que o passeio inclui, do que levar e das observações de cancelamento. `observacoes` é cortado em 300 caracteres |
+| `GET /api/reservas` | viajante | As reservas da conta: `id, ofertaId, pessoas, nome, telefone, desconto, precoUnit, total, codigo, status, criada, usadaEm, inicio, titulo, cidade, operador, motivoCancelamento, avaliada, qr, passeioId, duracaoMin, observacoes, pessoasChegaram, horasCancelar, obsCancelamento, inclui, levar, pontoEncontro, lat, lng, telefoneParceiro, avisos` |
+| `GET /api/avaliacoes` | viajante | As avaliações que a pessoa fez, mais novas primeiro: `id, reservaId, passeioId, titulo, nota, comentario, quando, resposta, removida` |
 | `POST /api/reservas/:id/cancelar` | viajante | Até o prazo da reserva (`horasCancelar` horas antes) |
 | `POST /api/reservas/:id/avaliar` | viajante | `{ nota: 1 a 5, comentario? }`. Só depois de validada, uma vez por reserva |
 
@@ -103,7 +105,10 @@ Detalhes do formato do site:
   - `cancelada` (pelo parceiro, pelo admin ou pelo clima) e `saida_cancelada` (a saída inteira): o texto traz o motivo e "Não há nada a pagar" (ou o valor devolvido, quando houver Pix);
   - `remarcada`, com `deData` e `paraData`;
   - `voucher_reemitido`;
-  - `mensagem`, com `assunto`.
+  - `mensagem`, com `assunto`;
+  - `voucher_recusado`: o parceiro recusou o voucher no local por ser de outro dia ou horário.
+- **O que vale é o da hora da reserva.** `inclui`, `levar`, `obsCancelamento` e `horasCancelar` da reserva são a cópia feita quando ela nasceu; mudar o passeio depois não muda a reserva. O `pontoEncontro` é sempre o de agora, porque é onde a pessoa precisa chegar. Reserva antiga, sem a cópia, mostra os do passeio de agora.
+- **Página do parceiro.** `endereco` e `horario` só vêm para quem tem local de atendimento (cantina, vinícola, restaurante, museu e hospedagem; `COM_LOCAL` em `config.js`). Para guia e trilha vêm `null`. Telefone, e-mail, documento, Pix e comissão nunca vão.
 - **Nunca vão para o site:** comissão, repasses, Pix, valor do destaque, equipe, auditoria, denúncias e a anotação interna do admin no cancelamento (`cancelado_obs`).
 
 ### Painel do operador (formato do Dashboard, em snake_case)
@@ -127,6 +132,7 @@ Ações do operador: `publicarOfertas`, `editarOferta`, `cancelarOferta`, `cance
 - `salvarPasseio` aceita também `horas_cancelar` (3, 12, 24 ou 48: o prazo do cancelamento grátis) e `acessivel` (`true`/`false`: o selo de acessibilidade no site). Os dois mudam na hora, sem aprovação, como `regras_cancelamento` (o texto livre de observações). O prazo novo vale para as reservas feitas dali em diante.
 - `ocultarPasseio { id, oculto, cancelar_reservas? }`: oculto, o passeio sai do site e as reservas já feitas continuam valendo. Com `cancelar_reservas: true` (o passeio não vai acontecer), as reservas confirmadas das saídas futuras são canceladas e os turistas, avisados. Responde `{ canceladas: n }`.
 - A reserva traz `observacoes` (o que o turista escreveu ao reservar), também no `validar` e no `dia`.
+- As fotos (do passeio e do parceiro) são conferidas pelo conteúdo: o arquivo precisa ser mesmo JPG, PNG ou WebP, não basta dizer que é.
 
 ### Painel do admin
 

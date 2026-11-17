@@ -3,6 +3,8 @@ const { db, save } = require('../banco');
 const { hash, check } = require('../seguranca');
 const { sair, sairDosOutros } = require('../sessoes');
 const { send } = require('../http');
+const { telefoneValido } = require('../modelo');
+const { imagemDeVerdade } = require('../regras');
 
 // A foto chega já reduzida pelo navegador (data URL JPEG/PNG/WebP). Até ~220 KB de texto.
 const FOTO = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/;
@@ -12,9 +14,10 @@ module.exports = [
   // Nome, telefone e foto são do perfil do viajante. O nome do operador aparece para todos os viajantes
   // ("Oferecido por …") e não pode ser trocado por aqui, sem o admin saber. A troca de senha vale para todos.
   { metodo: 'POST', caminho: '/api/perfil', quem: 'cliente', fazer: ({ res, me, b }) => {
-    const nome = String(b.nome || '').trim(), tel = String(b.telefone || '').trim(), dig = tel.replace(/\D/g, '');
+    const nome = String(b.nome || '').trim(), tel = String(b.telefone || '').trim().slice(0, 30);
     if (nome.length < 2) return send(res, 400, { erro: 'Informe seu nome completo.' });
-    if (tel && (dig.length < 10 || dig.length > 13)) return send(res, 400, { erro: 'Informe um telefone com DDD ou deixe o campo vazio.' });
+    if (nome.length > 80) return send(res, 400, { erro: 'O nome pode ter até 80 caracteres.' });
+    if (tel && !telefoneValido(tel)) return send(res, 400, { erro: 'Informe um telefone com DDD ou deixe o campo vazio.' });
     me.nome = nome; me.telefone = tel; save();
     send(res, 200, { ok: true, nome, telefone: tel });
   } },
@@ -27,7 +30,7 @@ module.exports = [
   } },
   { metodo: 'POST', caminho: '/api/perfil/foto', quem: 'cliente', fazer: ({ res, me, b }) => {
     if (b.foto === null) { delete me.foto; save(); return send(res, 200, { ok: true, temFoto: false }); }
-    if (typeof b.foto !== 'string' || !FOTO.test(b.foto)) return send(res, 400, { erro: 'Escolha uma imagem JPG, PNG ou WebP.' });
+    if (typeof b.foto !== 'string' || !FOTO.test(b.foto) || !imagemDeVerdade(b.foto)) return send(res, 400, { erro: 'Escolha uma imagem JPG, PNG ou WebP.' });
     if (b.foto.length > MAX_FOTO) return send(res, 400, { erro: 'A foto ficou grande demais. Tente outra imagem.' });
     me.foto = b.foto; save(); send(res, 200, { ok: true, temFoto: true });
   } },
@@ -35,6 +38,7 @@ module.exports = [
   { metodo: 'POST', caminho: '/api/perfil/senha', quem: 'logado', fazer: ({ res, me, tok, b }) => {
     if (!check(String(b.atual || ''), me.senha)) return send(res, 400, { erro: 'A senha atual não confere.' });
     if (String(b.nova || '').length < 8) return send(res, 400, { erro: 'A nova senha precisa ter ao menos 8 caracteres.' });
+    if (String(b.nova).length > 200) return send(res, 400, { erro: 'A senha pode ter até 200 caracteres.' });
     if (b.nova !== b.confirmar) return send(res, 400, { erro: 'As senhas novas não são iguais.' });
     me.senha = hash(String(b.nova)); save(); // String(): uma senha enviada como número não pode dar erro 500
     sairDosOutros(me.id, tok); // quem estava logado com a senha antiga em outro aparelho precisa entrar de novo
