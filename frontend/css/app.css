@@ -137,6 +137,19 @@ input:focus,textarea:focus,select:focus{border-color:var(--foco);outline:0}
 .sobre-parceiro{display:flex;gap:14px;align-items:center;border:1px solid var(--borda);border-radius:16px;padding:16px;max-width:640px;background:var(--superficie)}
 .sobre-parceiro img,.sobre-parceiro .avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;font-size:24px}
 .sobre-parceiro strong{font-size:17px}
+a.sobre-parceiro{text-decoration:none}.link-parceiro{display:block;margin-top:4px;color:var(--realce);font-weight:700;font-size:14px}
+/* comentários das avaliações (na oferta e em "Minhas avaliações") e as mensagens do perfil */
+.comentarios{list-style:none;margin:0;padding:0;display:grid;gap:14px;max-width:640px}
+.comentarios li{border:1px solid var(--borda);border-radius:12px;padding:14px 16px;background:var(--superficie)}
+.comentarios li.removida{opacity:.7}
+.av-topo{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:6px}.av-topo a{text-decoration:none}
+.comentarios p{margin:0 0 6px}.comentarios .nota a{color:var(--realce);font-weight:700}
+.resposta{padding-left:12px;border-left:3px solid var(--laranja)}
+.sobre .estrela{margin-bottom:12px}
+/* página do parceiro */
+.parceiro-topo{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;margin-bottom:32px}
+.parceiro-topo img{width:112px;height:112px;border-radius:50%;object-fit:cover}
+.parceiro-topo .saber{margin:10px 0 0}.parceiro-topo .tags{margin:6px 0}
 .regra{margin:0;font-size:15px}.regra strong{display:block}.regra .nota{display:block;margin-top:4px}
 
 /* caixas de formulário */

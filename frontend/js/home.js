@@ -1,7 +1,5 @@
 const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const hhmm = d => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-const brl = n => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 // Buscar: leva para as ofertas já filtradas (o painel pede login antes, se ainda não houver sessão)
 $('busca').onsubmit = e => { e.preventDefault(); const q = $('d').value.trim(); location.href = '/painel.html' + (q ? '#/?busca=' + encodeURIComponent(q) : ''); };
